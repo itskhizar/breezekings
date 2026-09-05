@@ -4,7 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy | BlogName</title>
+    <?php
+    $site_url_pp = bk_base_url();
+    $cur_url_pp  = $site_url_pp . '/privacy-policy';
+    ?>
+    <title>Privacy Policy | Breezekings</title>
+    <meta name="title" content="Privacy Policy | Breezekings">
+    <meta name="description" content="Read the Breezekings Privacy Policy to understand how we collect, use and protect your personal data.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<?php echo $cur_url_pp; ?>">
+    <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
+    <meta name="theme-color" content="#0B1F3A">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

@@ -4,6 +4,7 @@ session_start();
 require_once(__DIR__ . "/database.php");
 require_once(__DIR__ . "/mailer.php");
 require_once(__DIR__ . "/form.php");
+require_once(dirname(__DIR__) . "/seo_helpers.php");
 
 $form = new Form;
 

@@ -1,30 +1,115 @@
 <?php
 include 'include/classes/session.php';
 
-$cat_id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
-$cat_query = $database->query("SELECT * FROM categories WHERE id = $cat_id");
-$cat_data = mysqli_fetch_assoc($cat_query);
+$cat_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$cat_data = null;
+
+if ($cat_id <= 0 && !empty($_GET['slug'])) {
+    $raw_slug = strtolower(trim($_GET['slug']));
+    $clean_cat_search = mysqli_real_escape_string($database->connection, str_replace('-', ' ', $raw_slug));
+    $cat_query = $database->query("SELECT * FROM categories WHERE LOWER(category) = '$clean_cat_search' LIMIT 1");
+    $cat_data = mysqli_fetch_assoc($cat_query);
+    if ($cat_data) {
+        $cat_id = (int)$cat_data['id'];
+    }
+}
+
+if (!$cat_data && $cat_id > 0) {
+    $cat_query = $database->query("SELECT * FROM categories WHERE id = $cat_id");
+    $cat_data = mysqli_fetch_assoc($cat_query);
+}
 
 if (!$cat_data) {
-    header("Location: index.php");
+    header("Location: /");
     exit();
 }
 
 $category_name = $cat_data['category'];
+$clean_cat_rel = bk_category_url($cat_id, $category_name);
+
+// 301 Redirect old /category.php?id=... to clean SEO permalink
+$req_uri = $_SERVER['REQUEST_URI'] ?? '';
+if (strpos($req_uri, 'category.php') !== false) {
+    header("HTTP/1.1 301 Moved Permanently");
+    header("Location: " . bk_base_url() . $clean_cat_rel);
+    exit();
+}
+
 $posts_result = $database->get_posts_by_category($cat_id);
 $num_articles = mysqli_num_rows($posts_result);
+
+$site_url_cat   = bk_base_url();
+$canonical_cat  = $site_url_cat . $clean_cat_rel;
+$cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($category_name) . " on Breezekings. In-depth analysis, expert viewpoints, and fresh reporting.";
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $category_name; ?> | BlogName</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Read the latest editorial pieces in <?php echo $category_name; ?>.">
-    
-    <!-- Tailwind CSS -->
+
+    <!-- Primary SEO Meta Tags -->
+    <title><?php echo htmlspecialchars($category_name); ?> Articles | Breezekings</title>
+    <meta name="title" content="<?php echo htmlspecialchars($category_name); ?> Articles | Breezekings">
+    <meta name="description" content="<?php echo $cat_meta_desc; ?>">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="<?php echo $canonical_cat; ?>">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Breezekings">
+    <meta property="og:title" content="<?php echo htmlspecialchars($category_name); ?> | Breezekings">
+    <meta property="og:description" content="<?php echo $cat_meta_desc; ?>">
+    <meta property="og:url" content="<?php echo $canonical_cat; ?>">
+    <meta property="og:image" content="<?php echo $site_url_cat; ?>/images/breezekings-icon-red.svg">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@breezekings">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($category_name); ?> | Breezekings">
+    <meta name="twitter:description" content="<?php echo $cat_meta_desc; ?>">
+    <meta name="twitter:image" content="<?php echo $site_url_cat; ?>/images/breezekings-icon-red.svg">
+
+    <!-- Structured Data: CollectionPage & BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "CollectionPage",
+                "@id": "<?php echo $canonical_cat; ?>#webpage",
+                "url": "<?php echo $canonical_cat; ?>",
+                "name": "<?php echo addslashes($category_name); ?> Articles | Breezekings",
+                "description": "<?php echo addslashes($cat_meta_desc); ?>",
+                "isPartOf": {
+                    "@type": "WebSite",
+                    "name": "Breezekings",
+                    "url": "<?php echo $site_url_cat; ?>/"
+                }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "<?php echo $canonical_cat; ?>#breadcrumb",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Home",
+                        "item": "<?php echo $site_url_cat; ?>/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "<?php echo addslashes($category_name); ?>",
+                        "item": "<?php echo $canonical_cat; ?>"
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -109,11 +194,11 @@ $num_articles = mysqli_num_rows($posts_result);
     <!-- Page Header (Category Title) -->
     <div class="bg-navy-900 pt-10 pb-12">
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-4">
-                <a href="index.php" class="hover:text-white transition-colors">Home</a> 
+            <nav aria-label="Breadcrumb" class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-4">
+                <a href="/" class="hover:text-white transition-colors">Home</a> 
                 <span class="mx-2">&gt;</span> 
-                <span class="text-white"><?php echo htmlspecialchars($category_name); ?></span>
-            </div>
+                <span class="text-white" aria-current="page"><?php echo htmlspecialchars($category_name); ?></span>
+            </nav>
             <h1 class="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-4"><?php echo htmlspecialchars($category_name); ?></h1>
             <p class="text-crimson-500 text-xs font-bold tracking-widest uppercase"><?php echo $num_articles; ?> Articles</p>
         </div>
@@ -128,7 +213,7 @@ $num_articles = mysqli_num_rows($posts_result);
                 <main class="w-full lg:w-[70%]">
                     
                     <div class="flex justify-between items-end mb-8 border-b border-slate-200 pb-4">
-                        <h2 class="text-2xl font-serif font-bold text-navy-900 section-title">Latest Journalism</h2>
+                        <h2 class="text-2xl font-serif font-bold text-navy-900 section-title">Latest Articles</h2>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -137,42 +222,30 @@ $num_articles = mysqli_num_rows($posts_result);
                         if ($num_articles > 0) {
                             while ($post = mysqli_fetch_assoc($posts_result)) {
                                 $thumbnail = $post['featured_image'] ? "images/posts/" . $post['featured_image'] : "images/blog-default.jpg";
+                                $post_url = bk_post_url($post);
                         ?>
-                        <article class="bg-white rounded-sm shadow-sm overflow-hidden group flex flex-col">
-                            <a href="single.php?id=<?php echo $post['id']; ?>" class="block h-56 overflow-hidden relative">
-                                <img src="<?php echo $thumbnail; ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <article class="bg-white rounded-sm shadow-sm overflow-hidden group flex flex-col" itemscope itemtype="https://schema.org/BlogPosting">
+                            <a href="<?php echo $post_url; ?>" class="block h-56 overflow-hidden relative" itemprop="url">
+                                <img src="<?php echo $thumbnail; ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" itemprop="image">
                             </a>
                             <div class="p-6 flex-1 flex flex-col">
                                 <div class="flex items-center gap-4 mb-3">
                                     <span class="bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm"><?php echo strtoupper(htmlspecialchars($category_name)); ?></span>
                                     <span class="text-[11px] text-slate-500 font-medium"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></span>
                                 </div>
-                                <h3 class="text-xl font-serif font-bold text-navy-900 mb-3 leading-snug group-hover:text-crimson-600 transition-colors">
-                                    <a href="single.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a>
+                                <h3 class="text-xl font-serif font-bold text-navy-900 mb-3 leading-snug group-hover:text-crimson-600 transition-colors" itemprop="headline">
+                                    <a href="<?php echo $post_url; ?>"><?php echo htmlspecialchars($post['title']); ?></a>
                                 </h3>
-                                <p class="text-slate-500 mb-5 text-sm leading-relaxed flex-1 line-clamp-3">
+                                <p class="text-slate-500 mb-5 text-sm leading-relaxed flex-1 line-clamp-3" itemprop="description">
                                     <?php echo !empty($post['excerpt']) ? htmlspecialchars($post['excerpt']) : substr(strip_tags($post['content']), 0, 150) . '...'; ?>
                                 </p>
-                                <a href="single.php?id=<?php echo $post['id']; ?>" class="text-crimson-600 font-semibold text-sm hover:text-crimson-800 transition-colors flex items-center gap-1 group-hover:gap-2">
+                                <a href="<?php echo $post_url; ?>" class="text-crimson-600 font-semibold text-sm hover:text-crimson-800 transition-colors flex items-center gap-1 group-hover:gap-2">
                                     Read Article <i class="fa-solid fa-arrow-right text-xs"></i>
                                 </a>
                             </div>
                         </article>
                         <?php } } else { echo '<div class="md:col-span-2 text-center py-20 text-slate-400">No articles in this category yet.</div>'; } ?>
 
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="mt-12 flex justify-center">
-                        <nav class="flex items-center gap-2">
-                            <a href="#" class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:border-slate-300 transition-colors bg-white"><i class="fa-solid fa-chevron-left text-xs"></i></a>
-                            <a href="#" class="w-9 h-9 flex items-center justify-center rounded bg-crimson-600 text-white font-medium text-sm">1</a>
-                            <a href="#" class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium bg-white">2</a>
-                            <a href="#" class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium bg-white">3</a>
-                            <span class="px-1 text-slate-400">...</span>
-                            <a href="#" class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium bg-white">12</a>
-                            <a href="#" class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:border-slate-300 transition-colors bg-white"><i class="fa-solid fa-chevron-right text-xs"></i></a>
-                        </nav>
                     </div>
 
                 </main>
@@ -186,14 +259,15 @@ $num_articles = mysqli_num_rows($posts_result);
                         $top_read = $database->get_popular_posts(1);
                         if($tr = mysqli_fetch_assoc($top_read)) {
                             $tr_thumb = $tr['featured_image'] ? 'images/posts/'.$tr['featured_image'] : 'images/blog-default.jpg';
+                            $tr_url = bk_post_url($tr);
                         ?>
                         <div class="bg-navy-950 rounded-xl overflow-hidden shadow-xl border border-white/5 group">
                             <div class="p-4 bg-crimson-600 flex justify-between items-center">
                                 <h3 class="text-[10px] font-black text-white uppercase tracking-[0.2em]">Top Read Today</h3>
                                 <i class="fa-solid fa-fire-flame-curved text-white/50 text-xs"></i>
                             </div>
-                            <a href="single.php?id=<?php echo $tr['id']; ?>" class="block relative h-48">
-                                <img src="<?php echo $tr_thumb; ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity">
+                            <a href="<?php echo $tr_url; ?>" class="block relative h-48">
+                                <img src="<?php echo $tr_thumb; ?>" alt="<?php echo htmlspecialchars($tr['title']); ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" loading="lazy">
                                 <div class="absolute inset-0 bg-gradient-to-t from-navy-950 to-transparent"></div>
                                 <div class="absolute bottom-4 left-4 right-4">
                                     <h4 class="text-lg font-serif font-bold text-white leading-tight group-hover:text-crimson-400 transition-colors"><?php echo htmlspecialchars($tr['title']); ?></h4>
@@ -201,7 +275,7 @@ $num_articles = mysqli_num_rows($posts_result);
                             </a>
                             <div class="p-5 bg-navy-900/50 backdrop-blur-md">
                                 <p class="text-slate-400 text-xs mb-4 line-clamp-2 italic">"<?php echo htmlspecialchars($tr['excerpt']); ?>"</p>
-                                <a href="single.php?id=<?php echo $tr['id']; ?>" class="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
+                                <a href="<?php echo $tr_url; ?>" class="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
                                     READ FULL ARTICLE <i class="fa-solid fa-arrow-right text-crimson-500"></i>
                                 </a>
                             </div>
@@ -216,9 +290,9 @@ $num_articles = mysqli_num_rows($posts_result);
                                 <h3 class="text-[11px] font-bold text-slate-900 mb-5 uppercase tracking-widest border-b border-slate-200 pb-2 flex items-center gap-2">
                                     <i class="fa-solid fa-magnifying-glass text-crimson-500"></i> Search Archive
                                 </h3>
-                                <form action="index.php" method="GET" class="relative">
+                                <form action="/" method="GET" class="relative">
                                     <input type="text" name="q" placeholder="Keywords..." class="w-full bg-white border border-slate-200 text-slate-800 rounded-lg py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-crimson-500/10 focus:border-crimson-500 transition-all shadow-sm">
-                                    <button type="submit" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-crimson-600 transition-colors">
+                                    <button type="submit" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-crimson-600 transition-colors" aria-label="Search">
                                         <i class="fa-solid fa-paper-plane text-sm"></i>
                                     </button>
                                 </form>
@@ -235,10 +309,11 @@ $num_articles = mysqli_num_rows($posts_result);
                                     mysqli_data_seek($trending, 1);
                                     while($t = mysqli_fetch_assoc($trending)) {
                                         $t_thumb = $t['featured_image'] ? 'images/posts/'.$t['featured_image'] : 'images/blog-default.jpg';
+                                        $t_url = bk_post_url($t);
                                     ?>
-                                    <a href="single.php?id=<?php echo $t['id']; ?>" class="flex gap-4 group">
+                                    <a href="<?php echo $t_url; ?>" class="flex gap-4 group">
                                         <div class="w-20 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200">
-                                            <img src="<?php echo $t_thumb; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                            <img src="<?php echo $t_thumb; ?>" alt="<?php echo htmlspecialchars($t['title']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
                                         </div>
                                         <div>
                                             <h4 class="text-xs font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors line-clamp-2"><?php echo htmlspecialchars($t['title']); ?></h4>
@@ -262,8 +337,9 @@ $num_articles = mysqli_num_rows($posts_result);
                                     <?php
                                     $cats = $database->get_all_categories();
                                     while ($cat = mysqli_fetch_assoc($cats)) {
+                                        $c_url = bk_category_url($cat['id'], $cat['category']);
                                     ?>
-                                    <a href="category.php?id=<?php echo $cat['id']; ?>" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-bold rounded hover:bg-navy-900 hover:text-white hover:border-navy-900 transition-all uppercase tracking-wider">
+                                    <a href="<?php echo $c_url; ?>" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-bold rounded hover:bg-navy-900 hover:text-white hover:border-navy-900 transition-all uppercase tracking-wider">
                                         <?php echo htmlspecialchars($cat['category']); ?> 
                                         <span class="ml-1 text-slate-400 group-hover:text-white/50">(<?php echo $cat['post_count']; ?>)</span>
                                     </a>
@@ -273,79 +349,13 @@ $num_articles = mysqli_num_rows($posts_result);
                         </div>
                     </div>
                 </aside>
-
-                    <!-- Ad Placeholder Square -->
-                    <!-- Ad Placeholder (Hidden) -->
-                    <!-- <div class="bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center text-center h-[250px] w-full max-w-[300px] mx-auto hidden md:flex">
-                        <p class="text-slate-400 text-[10px] uppercase tracking-widest mb-1">Advertisement</p>
-                        <i class="fa-regular fa-image text-slate-300 text-3xl mt-2"></i>
-                    </div> -->
-
-                </aside>
             </div>
             
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-navy-900 text-white pt-16 pb-8 border-t-4 border-crimson-600">
-        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                
-                <!-- Brand -->
-                <div class="col-span-1">
-                    <a href="index.php" class="font-serif font-bold text-3xl tracking-tight mb-6 block">BlogName</a>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Pioneering digital journalism with depth, authority, and mathematical precision.
-                    </p>
-                    <div class="flex gap-4">
-                        <a href="#" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-rss"></i></a>
-                        <a href="#" class="text-slate-400 hover:text-white transition-colors"><i class="fa-brands fa-twitter"></i></a>
-                        <a href="#" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-globe"></i></a>
-                    </div>
-                </div>
-
-                <!-- Editorial -->
-                <div>
-                    <h4 class="font-bold text-white mb-6 uppercase text-[11px] tracking-widest">Editorial</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="category.php" class="text-slate-400 hover:text-white transition-colors">Politics</a></li>
-                        <li><a href="category.php" class="text-slate-400 hover:text-white transition-colors">Technology</a></li>
-                        <li><a href="category.php" class="text-slate-400 hover:text-white transition-colors">Culture</a></li>
-                        <li><a href="category.php" class="text-slate-400 hover:text-white transition-colors">Business</a></li>
-                    </ul>
-                </div>
-
-                <!-- Company -->
-                <div>
-                    <h4 class="font-bold text-white mb-6 uppercase text-[11px] tracking-widest">Company</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="about.php" class="text-slate-400 hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="privacy-policy.php" class="text-slate-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Editorial Guidelines</a></li>
-                    </ul>
-                </div>
-
-                <!-- Support -->
-                <div>
-                    <h4 class="font-bold text-white mb-6 uppercase text-[11px] tracking-widest">Support</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="termsofservices.php" class="text-slate-400 hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Advertise</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Press Kit</a></li>
-                    </ul>
-                </div>
-
-            </div>
-
-            <div class="border-t border-navy-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-slate-500 text-xs">
-                    &copy; 2024 BlogName Editorial Group. All rights reserved.
-                </p>
-            </div>
-        </div>
-    </footer>
+    <!-- Breezekings Global Footer -->
+    <?php include 'include/frontend_footer.php'; ?>
 
 </body>
 </html>

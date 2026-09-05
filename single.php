@@ -1,12 +1,30 @@
 <?php
 include 'include/classes/session.php';
 
-$post_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+// Resolve post ID from numeric id or encoded_id or query string
+$post_id = 0;
+if (!empty($_GET['id']) && is_numeric($_GET['id'])) {
+    $post_id = (int)$_GET['id'];
+} elseif (!empty($_GET['encoded_id'])) {
+    $post_id = bk_decode_id($_GET['encoded_id']);
+} elseif (!empty($_GET['id'])) {
+    $post_id = bk_decode_id($_GET['id']);
+}
+
 $post_query = $database->query("SELECT p.*, c.category FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = $post_id");
 $post = mysqli_fetch_assoc($post_query);
 
 if (!$post || $post['status'] !== 'Published') {
-    header("Location: index.php");
+    header("Location: /");
+    exit();
+}
+
+// 301 Redirect old /single.php?id=... to clean SEO permalink
+$clean_post_rel = bk_post_url($post['id'], $post['title'], $post['slug']);
+$req_uri = $_SERVER['REQUEST_URI'] ?? '';
+if (strpos($req_uri, 'single.php') !== false) {
+    header("HTTP/1.1 301 Moved Permanently");
+    header("Location: " . bk_base_url() . $clean_post_rel);
     exit();
 }
 
@@ -16,7 +34,7 @@ $search_q = isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '';
 $database->increment_views($post_id);
 
 $author_info = $database->getUserInfo($post['author']);
-$author_name = $author_info['display_name'] ?? $post['author'];
+$author_name = $author_info['display_name'] ?? $post['author'] ?? 'Breezekings Editorial';
 $author_img = (!empty($author_info['profile_image']) && file_exists('images/profiles/' . $author_info['profile_image'])) ? 'images/profiles/' . $author_info['profile_image'] : 'images/avatar.png';
 ?>
 <!DOCTYPE html>
@@ -24,12 +42,119 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($post['title']); ?> | BlogName</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="<?php echo htmlspecialchars($post['meta_description'] ?: substr(strip_tags($post['content']), 0, 160)); ?>">
-    <meta name="keywords" content="<?php echo htmlspecialchars($post['tags']); ?>">
-    
+
+    <?php
+    $site_url_s    = bk_base_url();
+    $canonical_url = $site_url_s . $clean_post_rel;
+    $og_img_s      = !empty($post['featured_image']) ? $site_url_s . '/images/posts/' . $post['featured_image'] : $site_url_s . '/images/breezekings-icon-red.svg';
+    $post_desc     = htmlspecialchars($post['meta_description'] ?: substr(strip_tags($post['content']), 0, 160));
+    $post_title    = htmlspecialchars($post['title']);
+    $post_author   = htmlspecialchars($author_name);
+    $category_name = htmlspecialchars($post['category'] ?? 'General');
+    $category_url  = $site_url_s . bk_category_url($post['category_id'], $post['category']);
+    $pub_date_iso  = date('c', strtotime($post['created_at']));
+    $mod_date_iso  = !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : $pub_date_iso;
+    $word_count    = str_word_count(strip_tags($post['content']));
+    ?>
+
+    <!-- Primary SEO Meta Tags -->
+    <title><?php echo $post_title; ?> | Breezekings</title>
+    <meta name="title" content="<?php echo $post_title; ?> | Breezekings">
+    <meta name="description" content="<?php echo $post_desc; ?>">
+    <meta name="keywords" content="<?php echo htmlspecialchars($post['tags'] ?? 'tech, blog, breezekings'); ?>">
+    <meta name="author" content="<?php echo $post_author; ?>">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical" href="<?php echo $canonical_url; ?>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Breezekings">
+    <meta property="og:title" content="<?php echo $post_title; ?>">
+    <meta property="og:description" content="<?php echo $post_desc; ?>">
+    <meta property="og:url" content="<?php echo $canonical_url; ?>">
+    <meta property="og:image" content="<?php echo $og_img_s; ?>">
+    <meta property="og:image:alt" content="<?php echo $post_title; ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="<?php echo $pub_date_iso; ?>">
+    <meta property="article:modified_time" content="<?php echo $mod_date_iso; ?>">
+    <meta property="article:section" content="<?php echo $category_name; ?>">
+    <meta property="article:author" content="<?php echo $post_author; ?>">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@breezekings">
+    <meta name="twitter:creator" content="@breezekings">
+    <meta name="twitter:title" content="<?php echo $post_title; ?>">
+    <meta name="twitter:description" content="<?php echo $post_desc; ?>">
+    <meta name="twitter:image" content="<?php echo $og_img_s; ?>">
+
+    <!-- Structured Data: BlogPosting & BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "BlogPosting",
+                "@id": "<?php echo $canonical_url; ?>#article",
+                "isPartOf": {
+                    "@type": "WebPage",
+                    "@id": "<?php echo $canonical_url; ?>",
+                    "url": "<?php echo $canonical_url; ?>",
+                    "name": "<?php echo addslashes($post_title); ?>"
+                },
+                "headline": "<?php echo addslashes($post_title); ?>",
+                "description": "<?php echo addslashes($post_desc); ?>",
+                "image": "<?php echo $og_img_s; ?>",
+                "datePublished": "<?php echo $pub_date_iso; ?>",
+                "dateModified": "<?php echo $mod_date_iso; ?>",
+                "mainEntityOfPage": "<?php echo $canonical_url; ?>",
+                "wordCount": <?php echo (int)$word_count; ?>,
+                "articleSection": "<?php echo addslashes($category_name); ?>",
+                "inLanguage": "en-US",
+                "author": {
+                    "@type": "Person",
+                    "name": "<?php echo addslashes($post_author); ?>"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "Breezekings",
+                    "url": "<?php echo $site_url_s; ?>",
+                    "logo": {
+                        "@type": "ImageObject",
+                        "url": "<?php echo $site_url_s; ?>/images/breezekings-icon-red.svg"
+                    }
+                }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "<?php echo $canonical_url; ?>#breadcrumb",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Home",
+                        "item": "<?php echo $site_url_s; ?>/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "<?php echo addslashes($category_name); ?>",
+                        "item": "<?php echo $category_url; ?>"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": "<?php echo addslashes($post_title); ?>",
+                        "item": "<?php echo $canonical_url; ?>"
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -159,9 +284,31 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
         <div class="absolute inset-0 bg-gradient-to-r from-navy-950/80 via-navy-900/60 to-transparent z-0"></div>
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex">
             <div class="max-w-4xl">
-                <span class="bg-crimson-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm mb-6 inline-block"><?php echo strtoupper(htmlspecialchars($post['category'])); ?></span>
+                <!-- Breadcrumbs -->
+                <nav aria-label="Breadcrumb" class="mb-5">
+                    <ol class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-300">
+                        <li>
+                            <a href="/" class="hover:text-white transition-colors flex items-center gap-1.5">
+                                <i class="fa-solid fa-house text-[10px]"></i> Home
+                            </a>
+                        </li>
+                        <li class="text-slate-500">/</li>
+                        <li>
+                            <a href="<?php echo $category_url; ?>" class="hover:text-white text-crimson-400 transition-colors">
+                                <?php echo $category_name; ?>
+                            </a>
+                        </li>
+                        <li class="text-slate-500">/</li>
+                        <li class="text-slate-400 truncate max-w-xs sm:max-w-md" aria-current="page">
+                            <?php echo $post_title; ?>
+                        </li>
+                    </ol>
+                </nav>
+                <a href="<?php echo $category_url; ?>" class="bg-crimson-600 hover:bg-crimson-700 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm mb-6 inline-block transition-colors">
+                    <?php echo strtoupper($category_name); ?>
+                </a>
                 <h1 class="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white leading-tight mb-8">
-                    <?php echo htmlspecialchars($post['title']); ?>
+                    <?php echo $post_title; ?>
                 </h1>
                 
                 <div class="flex items-center gap-4 text-xs font-medium uppercase tracking-wider text-slate-300">
@@ -302,8 +449,8 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                 <h3 class="text-[10px] font-black text-white uppercase tracking-[0.2em]">Top Read Today</h3>
                                 <i class="fa-solid fa-fire-flame-curved text-white/50 text-xs"></i>
                             </div>
-                            <a href="single.php?id=<?php echo $tr['id']; ?>" class="block relative h-48 lg:h-64">
-                                <img src="<?php echo $tr_thumb; ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity">
+                            <a href="<?php echo bk_post_url($tr); ?>" class="block relative h-48 lg:h-64">
+                                <img src="<?php echo $tr_thumb; ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="<?php echo htmlspecialchars($tr['title']); ?>">
                                 <div class="absolute inset-0 bg-gradient-to-t from-navy-950 to-transparent"></div>
                                 <div class="absolute bottom-4 left-4 right-4">
                                     <h4 class="text-lg font-serif font-bold text-white leading-tight group-hover:text-crimson-400 transition-colors line-clamp-2"><?php echo htmlspecialchars($tr['title']); ?></h4>
@@ -311,7 +458,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                             </a>
                             <div class="p-5 bg-navy-900/50 backdrop-blur-md">
                                 <p class="text-slate-400 text-xs mb-4 line-clamp-2 italic">"<?php echo htmlspecialchars($tr['excerpt']); ?>"</p>
-                                <a href="single.php?id=<?php echo $tr['id']; ?>" class="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
+                                <a href="<?php echo bk_post_url($tr); ?>" class="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
                                     READ FULL ARTICLE <i class="fa-solid fa-arrow-right text-crimson-500"></i>
                                 </a>
                             </div>
@@ -326,9 +473,9 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                 <h3 class="text-[11px] font-bold text-slate-900 mb-5 uppercase tracking-widest border-b border-slate-200 pb-2 flex items-center gap-2">
                                     <i class="fa-solid fa-magnifying-glass text-crimson-500"></i> Search Archive
                                 </h3>
-                                <form action="index.php" method="GET" class="relative">
+                                <form action="/" method="GET" class="relative">
                                     <input type="text" name="q" placeholder="Keywords..." class="w-full bg-white border border-slate-200 text-slate-800 rounded-lg py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-crimson-500/10 focus:border-crimson-500 transition-all shadow-sm">
-                                    <button type="submit" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-crimson-600 transition-colors">
+                                    <button type="submit" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-crimson-600 transition-colors" aria-label="Search">
                                         <i class="fa-solid fa-paper-plane text-sm"></i>
                                     </button>
                                 </form>
@@ -345,10 +492,11 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                     mysqli_data_seek($trending, 1);
                                     while($t = mysqli_fetch_assoc($trending)) {
                                         $t_thumb = $t['featured_image'] ? 'images/posts/'.$t['featured_image'] : 'images/blog-default.jpg';
+                                        $t_url = bk_post_url($t);
                                     ?>
-                                    <a href="single.php?id=<?php echo $t['id']; ?>" class="flex gap-4 group">
+                                    <a href="<?php echo $t_url; ?>" class="flex gap-4 group">
                                         <div class="w-20 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200">
-                                            <img src="<?php echo $t_thumb; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                            <img src="<?php echo $t_thumb; ?>" alt="<?php echo htmlspecialchars($t['title']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
                                         </div>
                                         <div>
                                             <h4 class="text-xs font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors line-clamp-2"><?php echo htmlspecialchars($t['title']); ?></h4>
@@ -372,69 +520,70 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                     <?php
                                     $cats = $database->get_all_categories();
                                     while ($cat = mysqli_fetch_assoc($cats)) {
+                                        $c_url = bk_category_url($cat['id'], $cat['category']);
                                     ?>
-                                    <a href="category.php?id=<?php echo $cat['id']; ?>" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-bold rounded hover:bg-navy-900 hover:text-white hover:border-navy-900 transition-all uppercase tracking-wider">
+                                    <a href="<?php echo $c_url; ?>" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-bold rounded hover:bg-navy-900 hover:text-white hover:border-navy-900 transition-all uppercase tracking-wider">
                                         <?php echo htmlspecialchars($cat['category']); ?> 
                                         <span class="ml-1 text-slate-400 group-hover:text-white/50">(<?php echo $cat['post_count']; ?>)</span>
                                     </a>
                                     <?php } ?>
                                 </div>
                             </div>
-<!-- Latest News Section -->
-<section aria-label="Latest News">
-    <div class="flex items-center justify-between mb-8">
-        <h2 class="text-xl lg:text-2xl font-serif font-bold text-navy-900 section-title">
-            Latest News
-        </h2>
-        <a href="index.php" class="text-[11px] font-bold text-crimson-600 hover:text-crimson-700 uppercase tracking-widest flex items-center gap-1 transition-colors">
-            View All <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-        </a>
-    </div>
 
-    <div class="space-y-6" role="list">
-        <?php
-        $latest_posts = $database->get_all_posts('Published');
-        $has_posts = $latest_posts && mysqli_num_rows($latest_posts) > 0;
-        if ($has_posts):
-            $count = 0;
-            while ($lp = mysqli_fetch_assoc($latest_posts)):
-                if ($lp['id'] == $post_id) continue; // Skip current post
-                if ($count >= 5) break; // Limit to 5 in sidebar
-                $count++;
-                
-                $lp_thumb = $lp['featured_image'] ? 'images/posts/' . $lp['featured_image'] : 'images/blog-default.jpg';
-                $lp_date = date('M d, Y', strtotime($lp['created_at']));
-                $lp_cat = htmlspecialchars($lp['category'] ?? 'General');
-                $lp_title = htmlspecialchars($lp['title']);
-        ?>
-                <article class="flex gap-4 group items-center" role="listitem">
-                    <a href="single.php?id=<?php echo (int) $lp['id']; ?>" class="w-24 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-slate-100 shadow-sm">
-                        <img src="<?php echo $lp_thumb; ?>" alt="<?php echo $lp_title; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                    </a>
-                    <div class="flex-1 min-w-0">
-                        <a href="category.php?id=<?php echo $lp['category_id']; ?>" class="text-[9px] font-bold text-crimson-600 uppercase tracking-wider mb-1 block">
-                            <?php echo $lp_cat; ?>
-                        </a>
-                        <h4 class="text-sm font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors line-clamp-2">
-                            <a href="single.php?id=<?php echo (int) $lp['id']; ?>">
-                                <?php echo $lp_title; ?>
-                            </a>
-                        </h4>
-                        <time class="text-[10px] text-slate-400 mt-1 block"><?php echo $lp_date; ?></time>
-                    </div>
-                </article>
-        <?php endwhile; endif; ?>
-    </div>
-</section>
-<!-- End Latest News Section -->
+                            <!-- Latest News Section -->
+                            <section aria-label="Latest News">
+                                <div class="flex items-center justify-between mb-8">
+                                    <h2 class="text-xl lg:text-2xl font-serif font-bold text-navy-900 section-title">
+                                        Latest News
+                                    </h2>
+                                    <a href="/" class="text-[11px] font-bold text-crimson-600 hover:text-crimson-700 uppercase tracking-widest flex items-center gap-1 transition-colors">
+                                        View All <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+
+                                <div class="space-y-6" role="list">
+                                    <?php
+                                    $latest_posts = $database->get_all_posts('Published');
+                                    $has_posts = $latest_posts && mysqli_num_rows($latest_posts) > 0;
+                                    if ($has_posts):
+                                        $count = 0;
+                                        while ($lp = mysqli_fetch_assoc($latest_posts)):
+                                            if ($lp['id'] == $post_id) continue; // Skip current post
+                                            if ($count >= 5) break; // Limit to 5 in sidebar
+                                            $count++;
+                                            
+                                            $lp_thumb = $lp['featured_image'] ? 'images/posts/' . $lp['featured_image'] : 'images/blog-default.jpg';
+                                            $lp_date = date('M d, Y', strtotime($lp['created_at']));
+                                            $lp_cat = htmlspecialchars($lp['category'] ?? 'General');
+                                            $lp_title = htmlspecialchars($lp['title']);
+                                            $lp_url = bk_post_url($lp);
+                                            $lp_cat_url = bk_category_url($lp['category_id'], $lp['category'] ?? 'General');
+                                    ?>
+                                            <article class="flex gap-4 group items-center" role="listitem">
+                                                <a href="<?php echo $lp_url; ?>" class="w-24 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-slate-100 shadow-sm">
+                                                    <img src="<?php echo $lp_thumb; ?>" alt="<?php echo $lp_title; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+                                                </a>
+                                                <div class="flex-1 min-w-0">
+                                                    <a href="<?php echo $lp_cat_url; ?>" class="text-[9px] font-bold text-crimson-600 uppercase tracking-wider mb-1 block">
+                                                        <?php echo $lp_cat; ?>
+                                                    </a>
+                                                    <h4 class="text-sm font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors line-clamp-2">
+                                                        <a href="<?php echo $lp_url; ?>">
+                                                            <?php echo $lp_title; ?>
+                                                        </a>
+                                                    </h4>
+                                                    <time class="text-[10px] text-slate-400 mt-1 block"><?php echo $lp_date; ?></time>
+                                                </div>
+                                            </article>
+                                    <?php endwhile; endif; ?>
+                                </div>
+                            </section>
+                            <!-- End Latest News Section -->
                         </div>
                     </div>
                 </aside>
                 
             </div>
-        </div>
-    </div>
-            
         </div>
     </div>
 
@@ -449,14 +598,15 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                 if ($related && mysqli_num_rows($related) > 0) {
                     while ($r = mysqli_fetch_assoc($related)) {
                         $r_thumb = $r['featured_image'] ? 'images/posts/'.$r['featured_image'] : 'images/blog-default.jpg';
+                        $r_url = bk_post_url($r);
                 ?>
                 <article class="group">
-                    <a href="single.php?id=<?php echo $r['id']; ?>" class="block h-48 overflow-hidden rounded-sm mb-4 relative">
-                        <img src="<?php echo $r_thumb; ?>" alt="<?php echo htmlspecialchars($r['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    <a href="<?php echo $r_url; ?>" class="block h-48 overflow-hidden rounded-sm mb-4 relative">
+                        <img src="<?php echo $r_thumb; ?>" alt="<?php echo htmlspecialchars($r['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
                     </a>
                     <span class="text-crimson-600 text-[10px] font-bold uppercase tracking-wider block mb-2"><?php echo strtoupper(htmlspecialchars($r['category'])); ?></span>
                     <h3 class="text-lg font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors">
-                        <a href="single.php?id=<?php echo $r['id']; ?>"><?php echo htmlspecialchars($r['title']); ?></a>
+                        <a href="<?php echo $r_url; ?>"><?php echo htmlspecialchars($r['title']); ?></a>
                     </h3>
                 </article>
                 <?php
@@ -469,63 +619,8 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-navy-900 text-white pt-16 pb-8 border-t-4 border-crimson-600">
-        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                <!-- Brand -->
-                <div class="col-span-1">
-                    <a href="index.php" class="font-serif font-bold text-3xl tracking-tight mb-6 block">BlogName</a>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Leading the conversation at the intersection of technology, culture, and business since 2018.
-                    </p>
-                    <div class="flex gap-4">
-                        <a href="#" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-rss"></i></a>
-                        <a href="#" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-share-nodes"></i></a>
-                        <a href="#" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-envelope"></i></a>
-                    </div>
-                </div>
-
-                <!-- SECTIONS -->
-                <div>
-                    <h4 class="font-bold text-white mb-6 uppercase text-[11px] tracking-widest">Sections</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Politics</a></li>
-                        <li><a href="category.php" class="text-crimson-500 hover:text-crimson-400 transition-colors font-medium">Technology</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Culture</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Business</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Science</a></li>
-                    </ul>
-                </div>
-
-                <!-- Company -->
-                <div>
-                    <h4 class="font-bold text-white mb-6 uppercase text-[11px] tracking-widest">Company</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="about.php" class="text-slate-400 hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="privacy-policy.php" class="text-slate-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="termsofservices.php" class="text-slate-400 hover:text-white transition-colors">Terms of Service</a></li>
-                    </ul>
-                </div>
-
-                <!-- Legal -->
-                <div>
-                    <h4 class="font-bold text-white mb-6 uppercase text-[11px] tracking-widest">Legal</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Editorial Guidelines</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Advertise</a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="border-t border-navy-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-slate-500 text-xs">
-                    &copy; 2024 BlogName Editorial Group. All rights reserved.
-                </p>
-            </div>
-        </div>
-    </footer>
+    <!-- Breezekings Global Footer -->
+    <?php include 'include/frontend_footer.php'; ?>
 
 </body>
 </html>

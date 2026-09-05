@@ -1,9 +1,14 @@
 <?php
 
 define("DB_SERVER", "localhost");
-define("DB_USER", "root");
-define("DB_PASS", "");
-define("DB_NAME", "blogging");
+define("DB_USER", "huntcqrp_breezekings");
+define("DB_PASS", "breezekings0920");
+define("DB_NAME", "huntcqrp_breezekings");
+
+// define("DB_SERVER", "localhost");
+// define("DB_USER", "root");
+// define("DB_PASS", "");
+// define("DB_NAME", "blogging");
 
 
 // define("DB_SERVER", "localhost");

@@ -4,8 +4,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us | BlogName</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php
+    $site_url_c = bk_base_url();
+    $cur_url_c  = $site_url_c . '/contact';
+    ?>
+    <title>Contact Us | Breezekings</title>
+    <meta name="title" content="Contact Us | Breezekings">
+    <meta name="description" content="Get in touch with Breezekings. Send us your story tips, feedback or advertising enquiries at info@breezekings.com.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<?php echo $cur_url_c; ?>">
+    <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
+    <meta name="theme-color" content="#0B1F3A">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Breezekings">
+    <meta property="og:title" content="Contact Us | Breezekings">
+    <meta property="og:description" content="Get in touch with Breezekings. Send us your story tips, feedback or advertising enquiries.">
+    <meta property="og:url" content="<?php echo $cur_url_c; ?>">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Contact Us | Breezekings">
+    <meta name="twitter:description" content="Get in touch with Breezekings.">
+
+    <!-- Structured Data: ContactPage -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "Contact Us | Breezekings",
+        "url": "<?php echo $cur_url_c; ?>",
+        "description": "Get in touch with Breezekings. Send us your story tips, feedback or advertising enquiries.",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Breezekings",
+            "url": "<?php echo $site_url_c; ?>/"
+        }
+    }
+    </script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -35,7 +71,7 @@
     <div class="bg-navy-900 py-16 text-center">
         <div class="max-w-4xl mx-auto px-4">
             <h1 class="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Get in Touch</h1>
-            <p class="text-slate-400">Have a story idea or feedback? We'd love to hear from you.</p>
+            <p class="text-slate-400">Have a story idea or feedback? We'd love to hear from you at <strong class="text-white">info@breezekings.com</strong></p>
         </div>
     </div>
 
@@ -50,8 +86,8 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-navy-900 mb-1">Email Us</h3>
-                        <p class="text-sm text-slate-500 mb-2">General inquiries & feedback</p>
-                        <a href="mailto:hello@blogname.com" class="text-crimson-600 font-bold hover:underline">hello@blogname.com</a>
+                        <p class="text-sm text-slate-500 mb-2">General inquiries &amp; feedback</p>
+                        <a href="mailto:info@breezekings.com" class="text-crimson-600 font-bold hover:underline">info@breezekings.com</a>
                     </div>
                 </div>
 

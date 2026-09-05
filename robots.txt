@@ -1,0 +1,58 @@
+# Breezekings — robots.txt
+# Generated for: https://breezekings.com
+# Last updated: 2025-09-05
+#
+# Purpose: Guide search engine crawlers to useful content
+# and block admin/internal pages from indexing.
+#
+# ── Allow all crawlers ────────────────────────────────────────────
+User-agent: *
+Allow: /
+
+# ── Block admin & dashboard pages ────────────────────────────────
+Disallow: /dashboard.php
+Disallow: /dashboardteacher.php
+Disallow: /login.php
+Disallow: /signup.php
+Disallow: /settings.php
+Disallow: /process.php
+Disallow: /add-*.php
+Disallow: /edit-*.php
+Disallow: /delete-*.php
+Disallow: /admin-*.php
+Disallow: /ajax-*.php
+Disallow: /fetch_*.php
+Disallow: /export-*.php
+Disallow: /debug_*.php
+Disallow: /fix_*.php
+Disallow: /test_*.php
+Disallow: /verify_*.php
+Disallow: /run_*.php
+Disallow: /cleanup_*.php
+Disallow: /update_*.php
+Disallow: /save_*.php
+Disallow: /number*.php
+Disallow: /profile.php
+Disallow: /admission.php
+Disallow: /admission-details.php
+Disallow: /leftbar.php
+Disallow: /leftbar-menu-content.php
+Disallow: /navbar.php
+Disallow: /foot.php
+Disallow: /include/
+Disallow: /assets/
+Disallow: /scratch/
+Disallow: /concept/
+Disallow: /requirements/
+
+# ── Block query-string-only duplicates ────────────────────────────
+# (Let canonical tags handle the real de-dupe for search)
+Disallow: /*?logout=*
+
+# ── Crawl-delay for bandwidth consideration ───────────────────────
+Crawl-delay: 2
+
+# ── Sitemaps & Feeds ───────────────────────────────────────────────
+Sitemap: https://breezekings.com/sitemap.xml
+Sitemap: https://breezekings.com/sitemap-posts.php
+Sitemap: https://breezekings.com/rss.xml

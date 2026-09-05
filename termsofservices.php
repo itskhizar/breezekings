@@ -4,7 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service | BlogName</title>
+    <?php
+    $site_url_tos = bk_base_url();
+    $cur_url_tos  = $site_url_tos . '/termsofservices';
+    ?>
+    <title>Terms of Service | Breezekings</title>
+    <meta name="title" content="Terms of Service | Breezekings">
+    <meta name="description" content="Read the Breezekings Terms of Service — the rules and guidelines that govern your use of our platform.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<?php echo $cur_url_tos; ?>">
+    <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
+    <meta name="theme-color" content="#0B1F3A">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

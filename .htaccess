@@ -1,0 +1,89 @@
+# ==============================================================================
+# BREEZEKINGS — High-Performance Apache & SEO Configuration
+# ==============================================================================
+
+# Character encoding
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .html .php .css .js .xml .json .rss
+</IfModule>
+
+# Security & SEO Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Gzip / Deflate Compression for high PageSpeed / Core Web Vitals
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Browser Caching / Leverage Browser Caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    ExpiresByType text/html "access plus 1 hour"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType application/json "access plus 1 hour"
+    ExpiresByType application/xml "access plus 1 hour"
+    ExpiresByType application/rss+xml "access plus 1 hour"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+</IfModule>
+
+# URL Rewriting Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Redirect direct .php requests to extensionless URLs (301 Permanent SEO Redirect)
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteCond %{REQUEST_METHOD} !POST
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+(.*?)\.php[\s?] [NC]
+    RewriteCond %{REQUEST_URI} !^.*/sitemap-xml\.php
+    RewriteCond %{REQUEST_URI} !^.*/sitemap-posts\.php
+    RewriteCond %{REQUEST_URI} !^.*/rss\.php
+    RewriteCond %{REQUEST_URI} !^.*/admin/
+    RewriteRule ^(.*)\.php$ /$1 [R=301,L]
+
+    # 2. Dynamic XML Sitemap & RSS Feed
+    RewriteRule ^sitemap\.xml$ sitemap-xml.php [L]
+    RewriteRule ^sitemap-posts\.xml$ sitemap-posts.php [L]
+    RewriteRule ^(rss|feed)(\.xml)?$ rss.php [L]
+
+    # 3. Clean Blog Post Permalinks
+    # /post/123/my-article-title or /post/123
+    RewriteRule ^post/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
+    RewriteRule ^blog/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
+    # Encoded ID: /post/e/bk1a2b/my-title
+    RewriteRule ^post/e/([a-zA-Z0-9_-]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?encoded_id=$1&slug=$2 [L,QSA]
+
+    # 4. Clean Category Permalinks
+    # /category/5/technology or /category/5
+    RewriteRule ^category/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ category.php?id=$1&slug=$2 [L,QSA]
+
+    # 5. Extensionless PHP files (e.g. /about -> about.php, /contact -> contact.php)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+</IfModule>

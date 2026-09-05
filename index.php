@@ -7,13 +7,13 @@ if (!$conn) {
 }
 
 // ── SEO: gather data before output ──────────────────────────────────────────
-$site_name = 'BlogName';
-$site_tagline = 'Independent Journalism for the Digital Age';
-$site_url = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-$current_url = $site_url . $_SERVER['REQUEST_URI'];
-$meta_description = 'Bringing clarity to the most complex issues of our time through rigorous reporting and expert analysis.';
-$og_image = $site_url . '/images/og-default.jpg';
-$search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
+$site_name    = 'Breezekings';
+$site_tagline = 'Fresh Perspectives on Tech, Culture & Beyond';
+$site_url     = bk_base_url();
+$current_url  = $site_url . '/';
+$meta_description = 'Breezekings — your go-to blog for fresh takes on technology, culture, business and lifestyle. Rigorously written, beautifully presented.';
+$og_image  = $site_url . '/images/breezekings-icon-red.svg';
+$search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -23,11 +23,16 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- ── Primary SEO ─────────────────────────────────────────── -->
-    <title><?php echo $search_q ? 'Search: ' . $search_q . ' | ' . $site_name : $site_name . ' | ' . $site_tagline; ?>
-    </title>
+    <title><?php echo $search_q ? 'Search: ' . $search_q . ' | ' . $site_name : $site_name . ' | ' . $site_tagline; ?></title>
     <meta name="description" content="<?php echo $meta_description; ?>">
+    <meta name="keywords" content="breezekings, blog, technology, culture, business, lifestyle, articles">
+    <meta name="author" content="Breezekings Editorial">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="<?php echo $current_url; ?>">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
+    <link rel="shortcut icon" href="/images/breezekings-icon-red.svg">
+    <meta name="theme-color" content="#0B1F3A">
 
     <!-- ── Open Graph ──────────────────────────────────────────── -->
     <meta property="og:type" content="website">
@@ -45,22 +50,42 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
     <meta name="twitter:description" content="<?php echo $meta_description; ?>">
     <meta name="twitter:image" content="<?php echo $og_image; ?>">
 
-    <!-- ── Schema.org WebSite ─────────────────────────────────── -->
+    <!-- ── Schema.org WebSite & Organization ──────────────────── -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "<?php echo $site_name; ?>",
-        "url": "<?php echo $site_url; ?>",
-        "description": "<?php echo $meta_description; ?>",
-        "potentialAction": {
-            "@type": "SearchAction",
-            "target": {
-                "@type": "EntryPoint",
-                "urlTemplate": "<?php echo $site_url; ?>/index.php?q={search_term_string}"
+        "@graph": [
+            {
+                "@type": "WebSite",
+                "@id": "<?php echo $site_url; ?>/#website",
+                "name": "Breezekings",
+                "url": "<?php echo $site_url; ?>/",
+                "description": "<?php echo addslashes($meta_description); ?>",
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": "<?php echo $site_url; ?>/?q={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                }
             },
-            "query-input": "required name=search_term_string"
-        }
+            {
+                "@type": "Organization",
+                "@id": "<?php echo $site_url; ?>/#organization",
+                "name": "Breezekings",
+                "url": "<?php echo $site_url; ?>/",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "<?php echo $site_url; ?>/images/breezekings-icon-red.svg"
+                },
+                "contactPoint": {
+                    "@type": "ContactPoint",
+                    "email": "info@breezekings.com",
+                    "contactType": "customer support"
+                }
+            }
+        ]
     }
     </script>
 
@@ -313,7 +338,8 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     $ticker_posts = $database->get_popular_posts(5);
                     $tick_items = [];
                     while ($tp = mysqli_fetch_assoc($ticker_posts)) {
-                        $tick_items[] = '<a href="single.php?id=' . (int) $tp['id'] . '"
+                        $tp_url = bk_post_url($tp);
+                        $tick_items[] = '<a href="' . $tp_url . '"
                             class="hover:underline mr-10 hover:text-white transition-colors">'
                             . htmlspecialchars($tp['title'])
                             . ' &nbsp;&#8226;</a>';
@@ -388,6 +414,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $hero_cat = htmlspecialchars($hero['category'] ?? '');
                         $hero_title = htmlspecialchars($hero['title']);
                         $hero_excerpt = htmlspecialchars($hero['excerpt'] ?? substr(strip_tags($hero['content']), 0, 180) . '…');
+                        $hero_url = bk_post_url($hero);
                         ?>
                         <!-- Schema: Article (hero) -->
                         <script type="application/ld+json">
@@ -400,12 +427,12 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 "datePublished":  "<?php echo $hero_iso; ?>",
                                 "author":         { "@type": "Person", "name": "<?php echo addslashes($hero_author); ?>" },
                                 "publisher":      { "@type": "Organization", "name": "<?php echo $site_name; ?>" },
-                                "url":            "<?php echo $site_url . '/single.php?id=' . (int) $hero['id']; ?>"
+                                "url":            "<?php echo $site_url . $hero_url; ?>"
                             }
                             </script>
 
                         <article itemscope itemtype="https://schema.org/NewsArticle">
-                            <a href="single.php?id=<?php echo (int) $hero['id']; ?>" itemprop="url"
+                            <a href="<?php echo $hero_url; ?>" itemprop="url"
                                 class="relative flex h-[420px] lg:h-[530px] rounded-xl overflow-hidden group card-img-wrap block shadow-2xl"
                                 aria-label="Read featured article: <?php echo $hero_title; ?>">
 
@@ -522,13 +549,15 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 ? htmlspecialchars($post['excerpt'])
                                 : htmlspecialchars(substr(strip_tags($post['content']), 0, 150)) . '…';
                             $author_name = htmlspecialchars($post['author_name'] ?? $post['author'] ?? 'Admin');
+                            $post_url = bk_post_url($post);
+                            $cat_url = bk_category_url($post['category_id'], $post['category'] ?? 'General');
                             ?>
                             <article
                                 class="article-card bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden flex flex-col group hover:shadow-card-hover transition-shadow duration-300"
                                 role="listitem" itemscope itemtype="https://schema.org/BlogPosting">
 
                                 <!-- Thumbnail -->
-                                <a href="single.php?id=<?php echo (int) $post['id']; ?>"
+                                <a href="<?php echo $post_url; ?>"
                                     class="block h-48 card-img-wrap flex-shrink-0" itemprop="url" tabindex="-1"
                                     aria-hidden="true">
                                     <img src="<?php echo $thumb; ?>" alt="<?php echo $post_title; ?>" itemprop="image"
@@ -539,7 +568,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 <div class="p-6 flex-1 flex flex-col">
 
                                     <!-- Category chip -->
-                                    <a href="category.php?slug=<?php echo urlencode(strtolower($cat_name)); ?>"
+                                    <a href="<?php echo $cat_url; ?>"
                                         class="self-start bg-amber-50 text-amber-700 text-[9px] font-bold uppercase tracking-[.12em] px-2.5 py-1 rounded-sm mb-3 hover:bg-amber-100 transition-colors"
                                         itemprop="articleSection">
                                         <?php echo $cat_name; ?>
@@ -548,7 +577,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                     <!-- Title -->
                                     <h3 class="text-lg lg:text-xl font-serif font-bold text-navy-900 mb-3 leading-snug group-hover:text-crimson-600 transition-colors"
                                         itemprop="headline">
-                                        <a href="single.php?id=<?php echo (int) $post['id']; ?>" class="hover:no-underline">
+                                        <a href="<?php echo $post_url; ?>" class="hover:no-underline">
                                             <?php echo $post_title; ?>
                                         </a>
                                     </h3>
@@ -652,6 +681,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $tr_thumb = $tr['featured_image'] ? 'images/posts/' . $tr['featured_image'] : 'images/blog-default.jpg';
                         $tr_title = htmlspecialchars($tr['title']);
                         $tr_excerpt = htmlspecialchars($tr['excerpt'] ?? substr(strip_tags($tr['content']), 0, 120));
+                        $tr_url = bk_post_url($tr);
                         ?>
                         <div class="bg-navy-950 rounded-xl overflow-hidden shadow-xl border border-white/5 group">
                             <!-- Widget header bar -->
@@ -665,7 +695,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 </span>
                             </div>
                             <!-- Image -->
-                            <a href="single.php?id=<?php echo (int) $tr['id']; ?>" class="block relative h-44 card-img-wrap"
+                            <a href="<?php echo $tr_url; ?>" class="block relative h-44 card-img-wrap"
                                 aria-label="<?php echo $tr_title; ?>">
                                 <img src="<?php echo $tr_thumb; ?>" alt="<?php echo $tr_title; ?>"
                                     class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500"
@@ -684,7 +714,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 <p class="text-slate-400 text-xs mb-4 line-clamp-2 italic leading-relaxed">
                                     &ldquo;<?php echo $tr_excerpt; ?>&rdquo;
                                 </p>
-                                <a href="single.php?id=<?php echo (int) $tr['id']; ?>"
+                                <a href="<?php echo $tr_url; ?>"
                                     class="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all duration-200 group/link">
                                     Read Full Article
                                     <i class="fa-solid fa-arrow-right text-crimson-500 group-hover/link:text-crimson-400"
@@ -700,7 +730,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                             <i class="fa-solid fa-magnifying-glass text-crimson-500" aria-hidden="true"></i>
                             Search Archive
                         </h3>
-                        <form action="index.php" method="GET" role="search" aria-label="Search articles">
+                        <form action="/" method="GET" role="search" aria-label="Search articles">
                             <div class="relative">
                                 <label for="sidebar-search" class="sr-only">Search keywords</label>
                                 <input type="search" id="sidebar-search" name="q" value="<?php echo $search_q; ?>"
@@ -734,6 +764,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                             while ($t = mysqli_fetch_assoc($trending)):
                                 $t_thumb = $t['featured_image'] ? 'images/posts/' . $t['featured_image'] : 'images/blog-default.jpg';
                                 $t_title = htmlspecialchars($t['title']);
+                                $t_url = bk_post_url($t);
                                 ?>
                                 <article class="flex items-start gap-3 group" role="listitem">
                                     <!-- Decorative number -->
@@ -741,7 +772,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                         0<?php echo $t_count; ?>
                                     </span>
                                     <!-- Thumbnail -->
-                                    <a href="single.php?id=<?php echo (int) $t['id']; ?>"
+                                    <a href="<?php echo $t_url; ?>"
                                         class="w-[68px] h-[52px] shrink-0 rounded-lg overflow-hidden border border-slate-100 card-img-wrap block"
                                         tabindex="-1" aria-hidden="true">
                                         <img src="<?php echo $t_thumb; ?>" alt="<?php echo $t_title; ?>"
@@ -752,7 +783,7 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                         <h4 class="text-[12px] font-serif font-bold text-navy-900 leading-snug
                                                group-hover:text-crimson-600 transition-colors line-clamp-2">
                                             <a
-                                                href="single.php?id=<?php echo (int) $t['id']; ?>"><?php echo $t_title; ?></a>
+                                                href="<?php echo $t_url; ?>"><?php echo $t_title; ?></a>
                                         </h4>
                                         <div class="flex items-center gap-2 mt-1.5">
                                             <time class="text-[9px] text-slate-400 font-bold uppercase tracking-wide">
@@ -781,8 +812,9 @@ $search_q = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                             while ($cat = mysqli_fetch_assoc($cats)):
                                 $cat_name = htmlspecialchars($cat['category']);
                                 $cat_count = (int) $cat['post_count'];
+                                $cat_url = bk_category_url($cat['id'], $cat['category']);
                                 ?>
-                                <a href="category.php?id=<?php echo (int) $cat['id']; ?>" class="flex items-center justify-between px-3 py-2.5 rounded-lg
+                                <a href="<?php echo $cat_url; ?>" class="flex items-center justify-between px-3 py-2.5 rounded-lg
                                       text-slate-600 hover:bg-navy-900 hover:text-white
                                       transition-all duration-200 group" role="listitem">
                                     <span class="text-[12px] font-medium">

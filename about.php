@@ -4,8 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us | BlogName</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php
+    $site_url_a  = bk_base_url();
+    $cur_url_a   = $site_url_a . '/about';
+    ?>
+    <title>About Us | Breezekings</title>
+    <meta name="title" content="About Us | Breezekings">
+    <meta name="description" content="Learn about Breezekings — our mission, values and the team behind fresh perspectives on tech, culture and business.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<?php echo $cur_url_a; ?>">
+    <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
+    <meta name="theme-color" content="#0B1F3A">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Breezekings">
+    <meta property="og:title" content="About Us | Breezekings">
+    <meta property="og:description" content="Learn about Breezekings — our mission, values and the team behind fresh perspectives on tech, culture and business.">
+    <meta property="og:url" content="<?php echo $cur_url_a; ?>">
+    <meta property="og:image" content="<?php echo $site_url_a; ?>/images/breezekings-icon-red.svg">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="About Us | Breezekings">
+    <meta name="twitter:description" content="Learn about Breezekings — our mission, values and the team behind fresh perspectives on tech, culture and business.">
+
+    <!-- Structured Data: AboutPage -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        "name": "About Us | Breezekings",
+        "url": "<?php echo $cur_url_a; ?>",
+        "description": "Learn about Breezekings — our mission, values and the team behind fresh perspectives on tech, culture and business.",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Breezekings",
+            "url": "<?php echo $site_url_a; ?>/"
+        }
+    }
+    </script>
+
     <script>
         tailwind.config = {
             theme: {
