@@ -228,31 +228,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     transparent 100%);
         }
 
-        /* ── Ad placeholder ────────────────────────────────────── */
-        .ad-slot {
-            background: #f8fafc;
-            border: 1.5px dashed #cbd5e1;
-            border-radius: .5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 2px;
-        }
-
-        .ad-slot-label {
-            font-size: .6rem;
-            text-transform: uppercase;
-            letter-spacing: .12em;
-            color: #94a3b8;
-        }
-
-        .ad-slot-size {
-            font-size: .65rem;
-            color: #cbd5e1;
-            font-family: 'DM Mono', monospace;
-        }
 
         /* ── Pagination ────────────────────────────────────────── */
         .pag-btn {
@@ -351,15 +326,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
         </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════════
-         LEADERBOARD AD — top (below ticker, above hero)
-    ════════════════════════════════════════════════════════════ -->
-    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-        <div class="ad-slot h-[90px] w-full max-w-[728px] mx-auto">
-            <span class="ad-slot-label">Advertisement</span>
-            <span class="ad-slot-size">728 × 90 Leaderboard</span>
-        </div>
-    </div>
 
     <!-- ════════════════════════════════════════════════════════════
          MAIN PAGE WRAPPER
@@ -666,13 +632,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
             <aside class="w-full lg:w-[30%] flex-shrink-0" aria-label="Sidebar">
                 <div class="sticky top-6 space-y-8">
 
-                    <!-- ── WIDGET 1: Ad 300×250 (top) ───────────── -->
-                    <div>
-                        <p class="ad-slot-label text-center mb-1.5">Advertisement</p>
-                        <div class="ad-slot w-full h-[250px]">
-                            <span class="ad-slot-size">300 × 250</span>
-                        </div>
-                    </div>
 
                     <!-- ── WIDGET 2: TOP READ TODAY ──────────────── -->
                     <?php
@@ -830,13 +789,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         </div>
                     </div>
 
-                    <!-- ── WIDGET 6: Ad 300×600 (half page) ──────── -->
-                    <div>
-                        <p class="ad-slot-label text-center mb-1.5">Advertisement</p>
-                        <div class="ad-slot w-full h-[600px]">
-                            <span class="ad-slot-size">300 × 600</span>
-                        </div>
-                    </div>
 
                 </div><!-- /sticky -->
             </aside>
@@ -845,13 +797,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
         </div>
         <!-- ════════ / TWO-COLUMN GRID ═══════════════════════════ -->
 
-        <!-- ── BOTTOM LEADERBOARD AD ──────────────────────────── -->
-        <div class="mt-16">
-            <p class="ad-slot-label text-center mb-1.5">Advertisement</p>
-            <div class="ad-slot h-[90px] w-full max-w-[970px] mx-auto">
-                <span class="ad-slot-size">970 × 90 Leaderboard</span>
-            </div>
-        </div>
 
     </div>
     <!-- ════════ / MAIN PAGE WRAPPER ══════════════════════════════ -->
