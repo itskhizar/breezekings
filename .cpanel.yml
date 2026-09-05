@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/huntcqrp/breezekings.com/
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/bash -c 'cd /home/huntcqrp/breezekings-git && git archive HEAD | tar -x -C "$DEPLOYPATH" --exclude=.cpanel.yml'
