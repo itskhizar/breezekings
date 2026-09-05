@@ -72,11 +72,9 @@ AddDefaultCharset UTF-8
     RewriteRule ^(rss|feed)(\.xml)?$ rss.php [L]
 
     # 3. Clean Blog Post Permalinks
-    # /post/123/my-article-title or /post/123
-    RewriteRule ^post/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
-    RewriteRule ^blog/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
-    # Encoded ID: /post/e/bk1a2b/my-title
-    RewriteRule ^post/e/([a-zA-Z0-9_-]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?encoded_id=$1&slug=$2 [L,QSA]
+    # /post/bk2lrq/my-article-title or /post/123/my-article-title
+    RewriteRule ^post/([a-zA-Z0-9_-]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
+    RewriteRule ^blog/([a-zA-Z0-9_-]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
 
     # 4. Clean Category Permalinks
     # /category/5/technology or /category/5

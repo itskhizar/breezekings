@@ -181,6 +181,11 @@ class MySQLDB
          $img_sql = ", `featured_image` = '$featured_image'";
       }
 
+      $pub_sql = "";
+      if ($status === 'Published') {
+         $pub_sql = ", `published_at` = IFNULL(`published_at`, NOW())";
+      }
+
       $q = "UPDATE `posts` SET 
             `title` = '$title', 
             `slug` = '$slug', 
@@ -193,6 +198,7 @@ class MySQLDB
             `tags` = '$tags', 
             `is_featured` = '$is_featured'
             $img_sql
+            $pub_sql
             WHERE `id` = $id";
 
       return mysqli_query($this->connection, $q);
@@ -205,7 +211,7 @@ class MySQLDB
             LEFT JOIN users u ON p.author = u.registration_no
             WHERE p.is_deleted = 0";
 
-      if ($status) {
+      if (!empty($status)) {
          $status = mysqli_real_escape_string($this->connection, $status);
          $q .= " AND p.status = '$status'";
       }
@@ -218,7 +224,7 @@ class MySQLDB
    {
       $cat_id = (int) $cat_id;
       $status_sql = "";
-      if ($status) {
+      if (!empty($status)) {
          $status = mysqli_real_escape_string($this->connection, $status);
          $status_sql = " AND p.status = '$status'";
       }
@@ -233,12 +239,16 @@ class MySQLDB
    function search_posts($query, $status = 'Published')
    {
       $query = mysqli_real_escape_string($this->connection, $query);
-      $status = mysqli_real_escape_string($this->connection, $status);
+      $status_sql = "";
+      if (!empty($status)) {
+         $status_esc = mysqli_real_escape_string($this->connection, $status);
+         $status_sql = " AND p.status = '$status_esc'";
+      }
       $q = "SELECT p.*, c.category, u.display_name as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON p.author = u.registration_no
-            WHERE (p.title LIKE '%$query%' OR p.content LIKE '%$query%' OR p.tags LIKE '%$query%') 
-            AND p.status = '$status' AND p.is_deleted = 0
+            WHERE (p.title LIKE '%$query%' OR p.content LIKE '%$query%' OR p.tags LIKE '%$query%' OR p.slug LIKE '%$query%') 
+            $status_sql AND p.is_deleted = 0
             ORDER BY p.created_at DESC";
       return mysqli_query($this->connection, $q);
    }

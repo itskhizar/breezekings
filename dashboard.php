@@ -11,8 +11,11 @@ if (!$session->logged_in) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | BlogAdmin</title>
+    <title>Dashboard | Breezekings Admin</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -23,10 +26,17 @@ if (!$session->logged_in) {
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        brand: {
-                            sidebar: '#151928',
-                            blue: '#0d6efd',
-                            hover: '#0b5ed7',
+                        navy: {
+                            50: '#eef0f7',
+                            800: '#1e2336',
+                            900: '#0B1F3A',
+                            950: '#071324',
+                        },
+                        crimson: {
+                            50: '#fff0f1',
+                            500: '#e12b38',
+                            600: '#C5202B',
+                            700: '#a31a23',
                         }
                     }
                 }
@@ -37,16 +47,15 @@ if (!$session->logged_in) {
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
-        .sidebar-link { transition: all 0.2s ease; }
-        .sidebar-link:hover { background-color: rgba(255, 255, 255, 0.05); }
-        .sidebar-link.active { background-color: rgba(255, 255, 255, 0.08); border-left: 3px solid #0d6efd; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .stat-card { transition: all 0.25s cubic-bezier(.25, .46, .45, .94); }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(11, 31, 58, 0.08); }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased">
@@ -62,190 +71,229 @@ if (!$session->logged_in) {
         <main class="flex-1 overflow-y-auto p-6 lg:p-8 flex flex-col">
             <div class="max-w-[1400px] mx-auto w-full">
                 
-                <!-- Page Header -->
-                <div class="mb-8">
-                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <span>HOME</span> <span class="text-slate-300">/</span> <span class="text-slate-600">DASHBOARD</span>
+                <!-- Page Header & Live Link -->
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                            <span>BREEZEKINGS</span> <span class="text-slate-300">/</span> <span class="text-crimson-600 font-semibold">MANAGEMENT SUITE</span>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-extrabold text-[#0B1F3A] tracking-tight">
+                            Welcome back, <?php echo htmlspecialchars($session->userinfo['display_name'] ?? $session->username); ?> <span class="text-xl">👋</span>
+                        </h2>
+                        <p class="text-xs lg:text-sm text-slate-500 mt-0.5">Platform overview, article performance and content pipeline status.</p>
                     </div>
-                    <h2 class="text-2xl font-semibold text-slate-800 mb-1">Welcome back, <?php echo htmlspecialchars($session->userinfo['display_name'] ?? $session->username); ?> <span class="text-xl">👋</span></h2>
-                    <p class="text-sm text-slate-500">System state is currently optimal. No critical alerts found.</p>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <a href="/" target="_blank" class="bg-white border border-slate-200 text-[#0B1F3A] hover:bg-slate-50 font-semibold py-2 px-4 rounded-lg shadow-sm transition-all text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-globe text-crimson-600"></i> View Live Site
+                        </a>
+                        <a href="create-post.php" class="bg-[#C5202B] hover:bg-[#a31a23] text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-all text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Write Article
+                        </a>
+                    </div>
                 </div>
 
                 <?php
-                // Fetch stats
-                $total_posts_res = $database->query("SELECT COUNT(*) as count FROM posts");
-                $total_posts = mysqli_fetch_assoc($total_posts_res)['count'];
+                // Fetch stats with published / draft status breakdown
+                $total_posts_res = $database->query("SELECT COUNT(*) as count FROM posts WHERE is_deleted = 0");
+                $total_posts = (int)(mysqli_fetch_assoc($total_posts_res)['count'] ?? 0);
 
-                $total_users_res = $database->query("SELECT COUNT(*) as count FROM users");
-                $total_users = mysqli_fetch_assoc($total_users_res)['count'];
+                $pub_posts_res = $database->query("SELECT COUNT(*) as count FROM posts WHERE status = 'Published' AND is_deleted = 0");
+                $published_posts = (int)(mysqli_fetch_assoc($pub_posts_res)['count'] ?? 0);
+
+                $draft_posts_res = $database->query("SELECT COUNT(*) as count FROM posts WHERE status = 'Draft' AND is_deleted = 0");
+                $draft_posts = (int)(mysqli_fetch_assoc($draft_posts_res)['count'] ?? 0);
+
+                $views_res = $database->query("SELECT SUM(views) as count FROM posts WHERE is_deleted = 0");
+                $total_views = (int)(mysqli_fetch_assoc($views_res)['count'] ?? 0);
 
                 $total_cats_res = $database->query("SELECT COUNT(*) as count FROM categories");
-                $total_categories = mysqli_fetch_assoc($total_cats_res)['count'];
+                $total_categories = (int)(mysqli_fetch_assoc($total_cats_res)['count'] ?? 0);
 
-                $total_drafts_res = $database->query("SELECT COUNT(*) as count FROM posts WHERE status = 'Draft'");
-                $total_drafts = mysqli_fetch_assoc($total_drafts_res)['count'];
+                $total_users_res = $database->query("SELECT COUNT(*) as count FROM users");
+                $total_users = (int)(mysqli_fetch_assoc($total_users_res)['count'] ?? 0);
                 ?>
 
-                <!-- Stats Row -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- ── Enhanced Stats Row ──────────────────────────────────── -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                     
-                    <!-- Card 1 -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-blue-500 relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4">
+                    <!-- Card 1: Published Articles -->
+                    <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-emerald-500 relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-3">
                             <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Posts</p>
-                                <h3 class="text-3xl font-bold text-slate-800"><?php echo number_format($total_posts); ?></h3>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Published Articles</p>
+                                <h3 class="text-3xl font-extrabold text-[#0B1F3A]"><?php echo number_format($published_posts); ?></h3>
                             </div>
-                            <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                                <i class="fa-solid fa-file-lines text-lg"></i>
+                            <div class="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-circle-check"></i>
                             </div>
                         </div>
-                        <div class="text-xs font-medium flex items-center gap-1 text-slate-400">
-                            <span class="text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-check"></i> System</span> Online
+                        <div class="text-[11px] font-medium flex items-center justify-between text-slate-500 pt-2 border-t border-slate-50">
+                            <span>Live & Indexed in Google</span>
+                            <span class="text-emerald-600 font-bold"><?php echo $total_posts > 0 ? round(($published_posts / $total_posts) * 100) : 0; ?>%</span>
                         </div>
                     </div>
 
-                    <!-- Card 2 -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-purple-500 relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4">
+                    <!-- Card 2: Draft Posts -->
+                    <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-amber-500 relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-3">
                             <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Registered Admins</p>
-                                <h3 class="text-3xl font-bold text-slate-800"><?php echo number_format($total_users); ?></h3>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pending Drafts</p>
+                                <h3 class="text-3xl font-extrabold text-[#0B1F3A]"><?php echo number_format($draft_posts); ?></h3>
                             </div>
-                            <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-500">
-                                <i class="fa-solid fa-shield-halved text-lg"></i>
+                            <div class="w-11 h-11 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-pen-ruler"></i>
                             </div>
                         </div>
-                        <div class="text-xs font-medium flex items-center gap-1 text-slate-400">
-                            <span class="text-slate-600 font-semibold">Active</span> Access Control
+                        <div class="text-[11px] font-medium flex items-center justify-between text-slate-500 pt-2 border-t border-slate-50">
+                            <span>Needs review or image</span>
+                            <a href="posts.php?status=Draft" class="text-amber-600 font-bold hover:underline">View Drafts &rarr;</a>
                         </div>
                     </div>
 
-                    <!-- Card 3 -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-emerald-500 relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4">
+                    <!-- Card 3: Total Readership Views -->
+                    <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-[#C5202B] relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-3">
                             <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Categories</p>
-                                <h3 class="text-3xl font-bold text-slate-800"><?php echo number_format($total_categories); ?></h3>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Page Views</p>
+                                <h3 class="text-3xl font-extrabold text-[#0B1F3A]"><?php echo number_format($total_views); ?></h3>
                             </div>
-                            <div class="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-500">
-                                <i class="fa-solid fa-layer-group text-lg"></i>
+                            <div class="w-11 h-11 bg-crimson-50 text-crimson-600 rounded-xl flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-fire"></i>
                             </div>
                         </div>
-                        <div class="text-xs font-medium flex items-center gap-1 text-slate-400">
-                            <span class="text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-circle-plus text-[10px]"></i> Structuring</span> content
+                        <div class="text-[11px] font-medium flex items-center justify-between text-slate-500 pt-2 border-t border-slate-50">
+                            <span>Article engagement</span>
+                            <span class="text-crimson-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> Growing</span>
                         </div>
                     </div>
 
-                    <!-- Card 4 -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-amber-500 relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4">
+                    <!-- Card 4: Categories & Topics -->
+                    <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-100 p-5 border-l-4 border-l-blue-600 relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-3">
                             <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Draft Posts</p>
-                                <h3 class="text-3xl font-bold text-slate-800"><?php echo number_format($total_drafts); ?></h3>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Topic Categories</p>
+                                <h3 class="text-3xl font-extrabold text-[#0B1F3A]"><?php echo number_format($total_categories); ?></h3>
                             </div>
-                            <div class="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
-                                <i class="fa-solid fa-pen-nib text-lg"></i>
+                            <div class="w-11 h-11 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-folder-tree"></i>
                             </div>
                         </div>
-                        <div class="text-xs font-medium flex items-center gap-1 text-slate-400">
-                            <span class="text-amber-600 flex items-center gap-1"><i class="fa-solid fa-clock"></i> Pending</span> Review
+                        <div class="text-[11px] font-medium flex items-center justify-between text-slate-500 pt-2 border-t border-slate-50">
+                            <span><?php echo number_format($total_posts); ?> Total Posts</span>
+                            <a href="admin-categories.php" class="text-blue-600 font-bold hover:underline">Manage &rarr;</a>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- Action Shortcuts Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                    <a href="create-post.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-brand-blue hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-plus"></i>
+                <!-- ── Action Shortcuts Grid ───────────────────────────────── -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-8">
+                    <a href="create-post.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-[#C5202B] hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-crimson-50 text-crimson-600 flex items-center justify-center group-hover:bg-[#C5202B] group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-pen-nib text-sm"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">New Post</span>
+                        <span class="text-[11px] font-bold text-slate-700">Write Post</span>
                     </a>
-                    <a href="posts.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-brand-blue hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-list-check"></i>
+                    <a href="posts.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-[#0B1F3A] hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 text-[#0B1F3A] flex items-center justify-center group-hover:bg-[#0B1F3A] group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-list text-sm"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Manage Posts</span>
+                        <span class="text-[11px] font-bold text-slate-700">All Posts</span>
                     </a>
-                    <a href="admin-categories.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-brand-blue hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-tags"></i>
+                    <a href="admin-categories.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-blue-600 hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-tags text-sm"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Categories</span>
+                        <span class="text-[11px] font-bold text-slate-700">Categories</span>
                     </a>
-                    <a href="admin-users.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-brand-blue hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-user-group"></i>
+                    <a href="/sitemap.xml" target="_blank" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-emerald-600 hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-sitemap text-sm"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Admins</span>
+                        <span class="text-[11px] font-bold text-slate-700">Sitemap XML</span>
                     </a>
-                    <a href="settings.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-brand-blue hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-gears"></i>
+                    <a href="/rss.xml" target="_blank" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-amber-600 hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-rss text-sm"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Settings</span>
+                        <span class="text-[11px] font-bold text-slate-700">RSS Feed</span>
                     </a>
-                    <a href="index.php" target="_blank" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-brand-blue hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <a href="settings.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-slate-800 hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-gear text-sm"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Live Site</span>
+                        <span class="text-[11px] font-bold text-slate-700">Settings</span>
                     </a>
                 </div>
 
-                <!-- Content Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <!-- ── Two-Column Main Content ─────────────────────────────── -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     
-                    <!-- Left: Recent Posts Table -->
+                    <!-- Left: Recent Articles Table -->
                     <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                            <h3 class="font-semibold text-slate-800">Recent Activity</h3>
-                            <a href="posts.php" class="text-xs font-semibold text-brand-blue hover:text-brand-hover">View All Posts</a>
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 class="font-bold text-[#0B1F3A] text-sm">Recent Blog Articles</h3>
+                                <p class="text-[11px] text-slate-400">Latest additions with permalinks & status</p>
+                            </div>
+                            <a href="posts.php" class="text-xs font-bold text-[#C5202B] hover:text-[#a31a23] transition-colors flex items-center gap-1">
+                                View All Posts <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                            </a>
                         </div>
                         
                         <div class="overflow-x-auto flex-1">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        <th class="px-6 py-3">Post Details</th>
-                                        <th class="px-6 py-3">Category</th>
-                                        <th class="px-6 py-3">Status</th>
-                                        <th class="px-6 py-3">Date</th>
-                                        <th class="px-6 py-3 text-right">Actions</th>
+                                    <tr class="bg-slate-50/80 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <th class="px-5 py-3">Article</th>
+                                        <th class="px-5 py-3">Category</th>
+                                        <th class="px-5 py-3 text-center">Status</th>
+                                        <th class="px-5 py-3 text-center">Views</th>
+                                        <th class="px-5 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm divide-y divide-slate-100">
-                                    
                                     <?php
-                                    $recent_posts = $database->query("SELECT p.*, c.category FROM posts p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.created_at DESC LIMIT 6");
+                                    $recent_posts = $database->query("SELECT p.*, c.category FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = 0 ORDER BY p.created_at DESC LIMIT 6");
                                     if ($recent_posts && mysqli_num_rows($recent_posts) > 0) {
                                         while ($post = mysqli_fetch_assoc($recent_posts)) {
                                             $status_class = ($post['status'] == 'Published') ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600';
                                             $status_dot = ($post['status'] == 'Published') ? 'bg-emerald-500' : 'bg-amber-500';
+                                            $post_url = bk_post_url($post);
                                     ?>
-                                    <tr class="hover:bg-slate-50 transition-colors cursor-pointer group" onclick="window.location='single.php?id=<?php echo $post['id']; ?>'">
-                                        <td class="px-6 py-4">
-                                            <p class="font-semibold text-slate-800 mb-0.5 group-hover:text-brand-blue transition-colors"><?php echo htmlspecialchars($post['title']); ?></p>
-                                            <p class="text-[10px] text-slate-500">by <?php echo htmlspecialchars($post['author']); ?></p>
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="px-5 py-3.5">
+                                            <div class="font-semibold text-slate-800 hover:text-crimson-600 transition-colors line-clamp-1">
+                                                <?php echo htmlspecialchars($post['title']); ?>
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                                                <span><?php echo $post_url; ?></span>
+                                            </div>
                                         </td>
-                                        <td class="px-6 py-4">
-                                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"><?php echo htmlspecialchars($post['category'] ?? 'Uncategorized'); ?></span>
+                                        <td class="px-5 py-3.5 whitespace-nowrap">
+                                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                                                <?php echo htmlspecialchars($post['category'] ?? 'General'); ?>
+                                            </span>
                                         </td>
-                                        <td class="px-6 py-4">
-                                            <span class="inline-flex items-center gap-1.5 <?php echo $status_class; ?> text-[11px] font-bold px-2.5 py-1 rounded-full"><span class="w-1.5 h-1.5 rounded-full <?php echo $status_dot; ?> block"></span> <?php echo $post['status']; ?></span>
+                                        <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                            <span class="inline-flex items-center gap-1.5 <?php echo $status_class; ?> text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                                                <span class="w-1.5 h-1.5 rounded-full <?php echo $status_dot; ?>"></span> 
+                                                <?php echo $post['status']; ?>
+                                            </span>
                                         </td>
-                                        <td class="px-6 py-4 text-xs text-slate-500">
-                                            <?php echo date('M d, Y', strtotime($post['created_at'])); ?>
+                                        <td class="px-5 py-3.5 text-center whitespace-nowrap font-medium text-xs text-slate-600">
+                                            <?php echo number_format($post['views']); ?>
                                         </td>
-                                        <td class="px-6 py-4 text-right">
-                                            <div class="flex justify-end gap-2">
-                                                <a href="single.php?id=<?php echo $post['id']; ?>" class="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all shadow-sm" title="View Post">
-                                                    <i class="fa-solid fa-eye text-xs"></i>
+                                        <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <?php if ($post['status'] === 'Published'): ?>
+                                                <a href="<?php echo $post_url; ?>" target="_blank" class="w-7 h-7 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all" title="View Live Post">
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                                                 </a>
-                                                <a href="create-post.php?edit=<?php echo $post['id']; ?>" class="w-8 h-8 rounded bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-500 hover:text-white transition-all shadow-sm" title="Edit Post">
-                                                    <i class="fa-solid fa-pen text-xs"></i>
+                                                <?php endif; ?>
+                                                <a href="edit-post.php?id=<?php echo $post['id']; ?>" class="w-7 h-7 rounded bg-slate-100 text-slate-600 hover:bg-[#0B1F3A] hover:text-white flex items-center justify-center transition-all" title="Edit Post">
+                                                    <i class="fa-solid fa-pen text-[10px]"></i>
                                                 </a>
                                             </div>
                                         </td>
@@ -253,66 +301,57 @@ if (!$session->logged_in) {
                                     <?php
                                         }
                                     } else {
-                                        echo '<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">No recent posts found.</td></tr>';
+                                        echo '<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">No blog articles created yet.</td></tr>';
                                     }
                                     ?>
-
                                 </tbody>
                             </table>
                         </div>
-                        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-center mt-auto">
-                            <a href="posts.php" class="text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-700 transition-colors">VIEW ALL CONTENT</a>
-                        </div>
                     </div>
 
-                    <!-- Right: Distribution -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col h-full">
-                        <div class="mb-6">
-                            <h3 class="font-semibold text-slate-800 mb-1">Content Distribution</h3>
-                            <p class="text-xs text-slate-500">Posts per category</p>
+                    <!-- Right: Content Distribution & SEO Health -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col">
+                        <div class="mb-5">
+                            <h3 class="font-bold text-[#0B1F3A] text-sm mb-0.5">Category Distribution</h3>
+                            <p class="text-[11px] text-slate-400">Published articles per category</p>
                         </div>
 
-                        <div class="space-y-5 flex-1">
-                            
+                        <div class="space-y-4 flex-1">
                             <?php
-                            $cat_dist = $database->query("SELECT c.category, COUNT(p.id) as count FROM categories c LEFT JOIN posts p ON c.id = p.category_id GROUP BY c.id ORDER BY count DESC LIMIT 8");
-                            $colors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-pink-500', 'bg-indigo-500'];
-                            $i = 0;
+                            $cat_dist = $database->query("SELECT c.category, COUNT(p.id) as count FROM categories c LEFT JOIN posts p ON c.id = p.category_id AND p.is_deleted = 0 GROUP BY c.id ORDER BY count DESC LIMIT 6");
+                            $palette = ['bg-crimson-600', 'bg-blue-600', 'bg-emerald-600', 'bg-purple-600', 'bg-amber-500', 'bg-indigo-600'];
+                            $idx = 0;
                             if ($cat_dist && mysqli_num_rows($cat_dist) > 0) {
                                 while ($cat = mysqli_fetch_assoc($cat_dist)) {
-                                    $percent = ($total_posts > 0) ? ($cat['count'] / $total_posts) * 100 : 0;
-                                    $color = $colors[$i % count($colors)];
+                                    $pct = ($total_posts > 0) ? ($cat['count'] / $total_posts) * 100 : 0;
+                                    $c_bg = $palette[$idx % count($palette)];
                             ?>
                             <div>
-                                <div class="flex justify-between text-xs font-bold uppercase tracking-widest mb-2">
-                                    <span class="text-slate-600"><?php echo htmlspecialchars($cat['category']); ?></span>
-                                    <span class="text-slate-800"><?php echo $cat['count']; ?></span>
+                                <div class="flex justify-between text-xs font-semibold mb-1">
+                                    <span class="text-slate-700"><?php echo htmlspecialchars($cat['category']); ?></span>
+                                    <span class="text-slate-500 font-mono"><?php echo $cat['count']; ?></span>
                                 </div>
-                                <div class="w-full bg-slate-100 rounded-full h-1.5">
-                                    <div class="<?php echo $color; ?> h-1.5 rounded-full" style="width: <?php echo $percent; ?>%"></div>
+                                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                    <div class="<?php echo $c_bg; ?> h-1.5 rounded-full" style="width: <?php echo max(4, $pct); ?>%"></div>
                                 </div>
                             </div>
                             <?php
-                                    $i++;
+                                    $idx++;
                                 }
                             } else {
                                 echo '<p class="text-xs text-slate-400">No categories found.</p>';
                             }
                             ?>
-
                         </div>
 
-                        <!-- Tip Box -->
-                        <div class="mt-8 bg-blue-50/50 border border-blue-100 rounded-lg p-4 flex gap-3 items-start">
-                            <div class="w-5 h-5 rounded-full bg-brand-blue text-white flex items-center justify-center shrink-0 mt-0.5">
-                                <i class="fa-solid fa-info text-[10px]"></i>
+                        <!-- SEO Best Practices Banner -->
+                        <div class="mt-6 bg-[#0B1F3A] text-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center gap-2 mb-1.5 text-crimson-400 text-xs font-bold uppercase tracking-wider">
+                                <i class="fa-solid fa-bolt"></i> SEO Architecture Active
                             </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1">QUICK TIP</h4>
-                                <p class="text-xs text-blue-800 leading-relaxed">
-                                    You have <?php echo $total_drafts; ?> drafts pending. Review them to keep your content pipeline active and healthy.
-                                </p>
-                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Sitemaps & clean encoded permalinks are auto-generated. When publishing a post, assign a high-res featured image and 300+ words to rank in Google Images & Discover.
+                            </p>
                         </div>
 
                     </div>
@@ -321,11 +360,11 @@ if (!$session->logged_in) {
             </div>
             
             <!-- Footer -->
-            <footer class="bg-[#f4f7f6] border-t border-slate-200 py-4 px-6 md:px-8 text-xs font-medium flex justify-between mt-auto">
-                <p class="text-slate-400">&copy; <?php echo date('Y'); ?> BlogAdmin Management Suite. All rights reserved.</p>
+            <footer class="bg-white border-t border-slate-200 py-4 px-6 md:px-8 text-xs font-medium flex justify-between items-center mt-auto">
+                <p class="text-slate-500">&copy; <?php echo date('Y'); ?> Breezekings Publishing Suite. All rights reserved.</p>
                 <div class="flex gap-4">
-                    <a href="#" class="text-slate-400 hover:text-brand-blue">Privacy Policy</a>
-                    <a href="#" class="text-slate-400 hover:text-brand-blue">Terms of Service</a>
+                    <a href="/privacy-policy" target="_blank" class="text-slate-400 hover:text-crimson-600 transition-colors">Privacy Policy</a>
+                    <a href="/termsofservices" target="_blank" class="text-slate-400 hover:text-crimson-600 transition-colors">Terms of Service</a>
                 </div>
             </footer>
         </main>

@@ -183,9 +183,7 @@ class Session
 
    function createSlug($string)
    {
-      $slug = preg_replace('/[^A-Za-z0-9-]+/', '-', $string);
-      $slug = strtolower(trim($slug, '-'));
-      return $slug;
+      return bk_slugify($string);
    }
 
    function addpost($data, $thumbnail)

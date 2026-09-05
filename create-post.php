@@ -123,11 +123,11 @@ if (!$session->logged_in) {
                                     <input type="text" name="title" id="postTitle" required class="w-full text-3xl font-bold text-slate-800 border-none outline-none placeholder-slate-300" placeholder="Enter post title here...">
                                     
                                     <!-- Slug Input -->
-                                    <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                                        <span class="font-medium">Permalink:</span>
-                                        <span class="text-slate-300">/posts/</span>
-                                        <input type="text" name="slug" id="postSlug" class="border-none p-0 focus:ring-0 text-brand-blue font-medium bg-transparent min-w-[200px]" placeholder="post-slug-here">
-                                        <button type="button" onclick="generateSlug()" class="text-slate-400 hover:text-brand-blue"><i class="fa-solid fa-arrows-rotate"></i></button>
+                                    <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
+                                        <span class="font-semibold text-slate-700"><i class="fa-solid fa-link text-[10px] text-crimson-600 mr-1"></i> Clean Permalink:</span>
+                                        <span class="text-slate-400 font-mono">/post/bk.../</span>
+                                        <input type="text" name="slug" id="postSlug" class="border-none p-0 focus:ring-0 text-crimson-600 font-semibold font-mono bg-transparent min-w-[220px]" placeholder="post-slug-auto-generated">
+                                        <button type="button" onclick="generateSlug()" title="Regenerate slug from title" class="text-slate-400 hover:text-crimson-600 ml-auto flex items-center gap-1 text-[11px] font-medium"><i class="fa-solid fa-arrows-rotate"></i> Auto-Generate</button>
                                     </div>
                                 </div>
 
@@ -397,6 +397,41 @@ if (!$session->logged_in) {
         editor.addEventListener('input', updateWordCount);
         // Initialize on load
         updateWordCount();
+
+        // ── Slug auto-generation with special character handling ─────────────
+        const postTitle = document.getElementById('postTitle');
+        const postSlug = document.getElementById('postSlug');
+        let slugManuallyChanged = false;
+
+        function slugify(text) {
+            return text.toString().toLowerCase().trim()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // remove accent symbols
+                .replace(/[^a-z0-9\s-]/g, '') // strip special characters, quotes, ampersands
+                .replace(/[\s-]+/g, '-') // collapse whitespace and duplicate hyphens
+                .replace(/^-+|-+$/g, ''); // trim hyphens
+        }
+
+        function generateSlug() {
+            if (postTitle && postSlug) {
+                const s = slugify(postTitle.value);
+                postSlug.value = s || 'article';
+            }
+        }
+
+        if (postSlug) {
+            postSlug.addEventListener('input', function() {
+                slugManuallyChanged = postSlug.value.trim().length > 0;
+            });
+        }
+
+        if (postTitle) {
+            postTitle.addEventListener('input', function() {
+                if (!slugManuallyChanged && postSlug) {
+                    postSlug.value = slugify(postTitle.value);
+                }
+            });
+        }
 
         // Validation for Draft fallback
         const postForm = document.getElementById('postForm');

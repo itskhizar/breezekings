@@ -89,8 +89,8 @@ if (!function_exists('bk_base_url')) {
 
 if (!function_exists('bk_post_url')) {
     /**
-     * Returns clean SEO permalink for a blog post:
-     * e.g. /post/123/mastering-seo-guide
+     * Returns clean SEO permalink for a blog post with encoded ID:
+     * e.g. /post/bk2lrq/mastering-seo-guide
      */
     function bk_post_url($post_or_id, $title = '', $slug = '') {
         $id = 0;
@@ -108,7 +108,8 @@ if (!function_exists('bk_post_url')) {
             $slug = 'post';
         }
 
-        return '/post/' . $id . '/' . $slug;
+        $encoded_id = bk_encode_id($id);
+        return '/post/' . $encoded_id . '/' . $slug;
     }
 }
 
