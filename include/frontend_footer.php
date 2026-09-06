@@ -1,8 +1,6 @@
-<!-- ============================================================
-     BREEZEKINGS — Frontend Footer
-     Architecture: brand column, dynamic nav, company links,
-     newsletter CTA, schema org, copyright
-============================================================ -->
+<?php
+$footer_email = "azamwaseem44@gmail.com";
+?>
 <style>
     .bk-footer {
         background: #0B1F3A;
@@ -12,9 +10,9 @@
         font-family: 'Inter', sans-serif;
     }
     .bk-footer-inner {
-        max-width: 1400px;
+        max-width: 1440px;
         margin: 0 auto;
-        padding: 0 1.5rem;
+        padding: 0 1.25rem;
     }
     .bk-footer-grid {
         display: grid;
@@ -22,10 +20,9 @@
         gap: 2.5rem;
     }
     @media (min-width: 640px)  { .bk-footer-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width: 1024px) { .bk-footer-grid { grid-template-columns: 2fr 1fr 1fr 1.4fr; } }
+    @media (min-width: 1024px) { .bk-footer-grid { grid-template-columns: 2fr 1.2fr 1.2fr; } }
 
     /* Brand column */
-    .bk-footer-brand {}
     .bk-footer-logo {
         display: flex;
         align-items: center;
@@ -36,17 +33,17 @@
     .bk-footer-logo svg { width: 38px; height: 38px; flex-shrink: 0; }
     .bk-footer-logo-text {
         font-size: 1.35rem;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: -.02em;
         color: #fff;
     }
     .bk-footer-logo-text span { color: #C8102E; }
     .bk-footer-tagline {
         font-size: 0.85rem;
-        color: rgba(255,255,255,.55);
+        color: rgba(255,255,255,.6);
         line-height: 1.7;
         margin-bottom: 1.25rem;
-        max-width: 300px;
+        max-width: 360px;
     }
     .bk-footer-socials {
         display: flex;
@@ -60,7 +57,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: rgba(255,255,255,.6);
+        color: rgba(255,255,255,.7);
         text-decoration: none;
         font-size: 0.8rem;
         transition: background .2s, color .2s;
@@ -69,11 +66,11 @@
 
     /* Link columns */
     .bk-footer-col-title {
-        font-size: 0.65rem;
+        font-size: 0.68rem;
         font-weight: 800;
-        letter-spacing: .18em;
+        letter-spacing: .16em;
         text-transform: uppercase;
-        color: rgba(255,255,255,.4);
+        color: rgba(255,255,255,.45);
         margin-bottom: 1.1rem;
     }
     .bk-footer-links {
@@ -86,61 +83,21 @@
     }
     .bk-footer-links a {
         font-size: 0.85rem;
-        color: rgba(255,255,255,.58);
+        color: rgba(255,255,255,.65);
         text-decoration: none;
         transition: color .18s;
         display: flex;
         align-items: center;
-        gap: 0.4rem;
+        gap: 0.45rem;
     }
     .bk-footer-links a:hover { color: #fff; }
     .bk-footer-links a i { font-size: 0.65rem; color: #C8102E; }
 
-    /* Newsletter */
-    .bk-footer-newsletter-text {
-        font-size: 0.82rem;
-        color: rgba(255,255,255,.5);
-        margin-bottom: 0.9rem;
-        line-height: 1.6;
-    }
-    .bk-footer-nl-form {
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-    }
-    .bk-footer-nl-input {
-        background: rgba(255,255,255,.07);
-        border: 1px solid rgba(255,255,255,.12);
-        border-radius: 8px;
-        color: #fff;
-        font-size: 0.82rem;
-        padding: 0.6rem 0.9rem;
-        outline: none;
-        transition: border-color .2s;
-        width: 100%;
-    }
-    .bk-footer-nl-input::placeholder { color: rgba(255,255,255,.3); }
-    .bk-footer-nl-input:focus { border-color: #C8102E; }
-    .bk-footer-nl-btn {
-        background: #C8102E;
-        color: #fff;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        border: none;
-        border-radius: 8px;
-        padding: 0.65rem 1rem;
-        cursor: pointer;
-        transition: background .2s;
-    }
-    .bk-footer-nl-btn:hover { background: #E8433D; }
-
     /* Contact CTA bar */
     .bk-footer-contact-bar {
-        margin-top: 3rem;
-        background: rgba(200,16,46,.1);
-        border: 1px solid rgba(200,16,46,.2);
+        margin-top: 3.5rem;
+        background: rgba(200,16,46,.08);
+        border: 1px solid rgba(200,16,46,.22);
         border-radius: 12px;
         padding: 1.1rem 1.5rem;
         display: flex;
@@ -151,20 +108,20 @@
     }
     .bk-footer-contact-bar p {
         font-size: 0.85rem;
-        color: rgba(255,255,255,.7);
+        color: rgba(255,255,255,.75);
     }
     .bk-footer-contact-bar strong { color: #fff; }
     .bk-footer-contact-mail {
         display: flex;
         align-items: center;
         gap: 0.4rem;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 700;
         color: #fff;
         text-decoration: none;
         background: #C8102E;
         padding: 0.5rem 1.1rem;
-        border-radius: 6px;
+        border-radius: 8px;
         transition: background .2s;
         white-space: nowrap;
     }
@@ -183,7 +140,7 @@
     }
     .bk-footer-copy {
         font-size: 0.78rem;
-        color: rgba(255,255,255,.35);
+        color: rgba(255,255,255,.4);
     }
     .bk-footer-legal {
         display: flex;
@@ -191,11 +148,11 @@
     }
     .bk-footer-legal a {
         font-size: 0.75rem;
-        color: rgba(255,255,255,.35);
+        color: rgba(255,255,255,.4);
         text-decoration: none;
         transition: color .18s;
     }
-    .bk-footer-legal a:hover { color: rgba(255,255,255,.7); }
+    .bk-footer-legal a:hover { color: rgba(255,255,255,.8); }
 </style>
 
 <!-- Schema.org Organization -->
@@ -208,7 +165,7 @@
     "logo": "https://breezekings.com/images/breezekings-icon-red.svg",
     "contactPoint": {
         "@type": "ContactPoint",
-        "email": "info@breezekings.com",
+        "email": "<?= $footer_email ?>",
         "contactType": "customer support"
     }
 }
@@ -235,61 +192,53 @@
                     Breezekings delivers content that matters — rigorously written, beautifully presented.
                 </p>
                 <div class="bk-footer-socials">
-                    <a href="mailto:info@breezekings.com" class="bk-footer-social" aria-label="Email us"><i class="fa-solid fa-envelope"></i></a>
+                    <a href="mailto:<?= $footer_email ?>" class="bk-footer-social" aria-label="Email us" title="<?= $footer_email ?>"><i class="fa-solid fa-envelope"></i></a>
                     <a href="/rss.xml" class="bk-footer-social" aria-label="RSS Feed"><i class="fa-solid fa-rss"></i></a>
                     <a href="#" class="bk-footer-social" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
                     <a href="#" class="bk-footer-social" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
                 </div>
             </div>
 
-            <!-- ── Navigation Column ───────────────────────────── -->
+            <!-- ── Categories / Navigation Column ──────────────── -->
             <div>
-                <h4 class="bk-footer-col-title">Navigation</h4>
+                <h4 class="bk-footer-col-title">Categories</h4>
                 <ul class="bk-footer-links">
                     <li><a href="/"><i class="fa-solid fa-chevron-right"></i> Home</a></li>
                     <?php
                     $footer_cats = $database->get_all_categories();
                     $fc = 0;
-                    while ($cat = mysqli_fetch_assoc($footer_cats)) {
-                        if ($fc >= 5) break;
-                        $f_cat_url = bk_category_url($cat['id'], $cat['category']);
-                        echo "<li><a href='{$f_cat_url}'><i class='fa-solid fa-chevron-right'></i> " . htmlspecialchars($cat['category']) . "</a></li>";
-                        $fc++;
+                    if ($footer_cats) {
+                        while ($cat = mysqli_fetch_assoc($footer_cats)) {
+                            if ($fc >= 6) break;
+                            $f_cat_url = bk_category_url($cat['id'], $cat['category']);
+                            echo "<li><a href='{$f_cat_url}'><i class='fa-solid fa-chevron-right'></i> " . htmlspecialchars($cat['category']) . "</a></li>";
+                            $fc++;
+                        }
                     }
                     ?>
                 </ul>
             </div>
 
-            <!-- ── Company Column ──────────────────────────────── -->
+            <!-- ── Company & Legal Column ──────────────────────── -->
             <div>
-                <h4 class="bk-footer-col-title">Company</h4>
+                <h4 class="bk-footer-col-title">Company &amp; Legal</h4>
                 <ul class="bk-footer-links">
                     <li><a href="/about"><i class="fa-solid fa-chevron-right"></i> About Us</a></li>
-                    <li><a href="/contact"><i class="fa-solid fa-chevron-right"></i> Contact</a></li>
+                    <li><a href="/contact"><i class="fa-solid fa-chevron-right"></i> Contact Support</a></li>
                     <li><a href="/privacy-policy"><i class="fa-solid fa-chevron-right"></i> Privacy Policy</a></li>
                     <li><a href="/termsofservices"><i class="fa-solid fa-chevron-right"></i> Terms of Service</a></li>
-                    <li><a href="/sitemap.xml" target="_blank"><i class="fa-solid fa-chevron-right"></i> Sitemap (XML)</a></li>
+                    <li><a href="/sitemap.xml" target="_blank"><i class="fa-solid fa-chevron-right"></i> XML Sitemap</a></li>
                     <li><a href="/rss.xml" target="_blank"><i class="fa-solid fa-chevron-right"></i> RSS Feed</a></li>
                 </ul>
-            </div>
-
-            <!-- ── Newsletter Column ───────────────────────────── -->
-            <div>
-                <h4 class="bk-footer-col-title">Newsletter</h4>
-                <p class="bk-footer-newsletter-text">Get fresh articles delivered to your inbox. No spam, unsubscribe anytime.</p>
-                <form class="bk-footer-nl-form" action="#" method="POST" aria-label="Newsletter signup">
-                    <input type="email" name="newsletter_email" placeholder="your@email.com" class="bk-footer-nl-input" required>
-                    <button type="submit" class="bk-footer-nl-btn">Subscribe</button>
-                </form>
             </div>
 
         </div><!-- /.bk-footer-grid -->
 
         <!-- ── Contact CTA Bar ─────────────────────────────────── -->
         <div class="bk-footer-contact-bar">
-            <p>Have a story tip or feedback? <strong>We'd love to hear from you.</strong></p>
-            <a href="mailto:info@breezekings.com" class="bk-footer-contact-mail">
-                <i class="fa-solid fa-envelope"></i> info@breezekings.com
+            <p>Have a story tip, editorial inquiry or feedback? <strong>We'd love to hear from you.</strong></p>
+            <a href="mailto:<?= $footer_email ?>" class="bk-footer-contact-mail">
+                <i class="fa-solid fa-envelope"></i> <?= $footer_email ?>
             </a>
         </div>
 

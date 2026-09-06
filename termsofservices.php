@@ -58,12 +58,12 @@
 
             <h2 class="text-2xl font-bold text-navy-900 mb-6">2. Use License</h2>
             <p class="text-slate-600 mb-8 leading-relaxed">
-                Permission is granted to temporarily download one copy of the materials (information or software) on BlogName's website for personal, non-commercial transitory viewing only.
+                Permission is granted to temporarily download one copy of the materials (information or software) on Breezekings' website for personal, non-commercial transitory viewing only.
             </p>
 
             <h2 class="text-2xl font-bold text-navy-900 mb-6">3. Content Ownership</h2>
             <p class="text-slate-600 mb-8 leading-relaxed">
-                All content published on this blog, including text, images, and layout, is the intellectual property of BlogName unless otherwise stated. Unauthorized reproduction is strictly prohibited.
+                All content published on this blog, including text, images, and layout, is the intellectual property of Breezekings unless otherwise stated. Unauthorized reproduction is strictly prohibited.
             </p>
 
             <h2 class="text-2xl font-bold text-navy-900 mb-6">4. User Comments</h2>
@@ -77,7 +77,7 @@
             </p>
 
             <div class="mt-12 pt-8 border-t border-slate-100">
-                <p class="text-sm text-slate-400">For legal inquiries, please contact legal@blogname.com</p>
+                <p class="text-sm text-slate-500">For legal inquiries, please contact <a href="mailto:azamwaseem44@gmail.com" class="text-crimson-600 font-bold hover:underline">azamwaseem44@gmail.com</a></p>
             </div>
         </div>
     </div>

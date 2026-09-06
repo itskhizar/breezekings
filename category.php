@@ -221,12 +221,12 @@ $cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($categ
                         <?php
                         if ($num_articles > 0) {
                             while ($post = mysqli_fetch_assoc($posts_result)) {
-                                $thumbnail = $post['featured_image'] ? "images/posts/" . $post['featured_image'] : "images/blog-default.jpg";
+                                $thumbnail = bk_thumb_url($post['featured_image']);
                                 $post_url = bk_post_url($post);
                         ?>
                         <article class="bg-white rounded-sm shadow-sm overflow-hidden group flex flex-col" itemscope itemtype="https://schema.org/BlogPosting">
                             <a href="<?php echo $post_url; ?>" class="block h-56 overflow-hidden relative" itemprop="url">
-                                <img src="<?php echo $thumbnail; ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" itemprop="image">
+                                <img src="<?php echo $thumbnail; ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" itemprop="image" onerror="this.src='/images/blog-default.jpg'">
                             </a>
                             <div class="p-6 flex-1 flex flex-col">
                                 <div class="flex items-center gap-4 mb-3">
@@ -258,7 +258,7 @@ $cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($categ
                         <?php
                         $top_read = $database->get_popular_posts(1);
                         if($tr = mysqli_fetch_assoc($top_read)) {
-                            $tr_thumb = $tr['featured_image'] ? 'images/posts/'.$tr['featured_image'] : 'images/blog-default.jpg';
+                            $tr_thumb = bk_thumb_url($tr['featured_image']);
                             $tr_url = bk_post_url($tr);
                         ?>
                         <div class="bg-navy-950 rounded-xl overflow-hidden shadow-xl border border-white/5 group">
@@ -267,7 +267,7 @@ $cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($categ
                                 <i class="fa-solid fa-fire-flame-curved text-white/50 text-xs"></i>
                             </div>
                             <a href="<?php echo $tr_url; ?>" class="block relative h-48">
-                                <img src="<?php echo $tr_thumb; ?>" alt="<?php echo htmlspecialchars($tr['title']); ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" loading="lazy">
+                                <img src="<?php echo $tr_thumb; ?>" alt="<?php echo htmlspecialchars($tr['title']); ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                 <div class="absolute inset-0 bg-gradient-to-t from-navy-950 to-transparent"></div>
                                 <div class="absolute bottom-4 left-4 right-4">
                                     <h4 class="text-lg font-serif font-bold text-white leading-tight group-hover:text-crimson-400 transition-colors"><?php echo htmlspecialchars($tr['title']); ?></h4>
@@ -308,12 +308,12 @@ $cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($categ
                                     $trending = $database->get_popular_posts(4);
                                     mysqli_data_seek($trending, 1);
                                     while($t = mysqli_fetch_assoc($trending)) {
-                                        $t_thumb = $t['featured_image'] ? 'images/posts/'.$t['featured_image'] : 'images/blog-default.jpg';
+                                        $t_thumb = bk_thumb_url($t['featured_image']);
                                         $t_url = bk_post_url($t);
                                     ?>
                                     <a href="<?php echo $t_url; ?>" class="flex gap-4 group">
                                         <div class="w-20 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200">
-                                            <img src="<?php echo $t_thumb; ?>" alt="<?php echo htmlspecialchars($t['title']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+                                            <img src="<?php echo $t_thumb; ?>" alt="<?php echo htmlspecialchars($t['title']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                         </div>
                                         <div>
                                             <h4 class="text-xs font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors line-clamp-2"><?php echo htmlspecialchars($t['title']); ?></h4>

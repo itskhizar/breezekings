@@ -83,7 +83,7 @@
             </p>
 
             <div class="mt-12 pt-8 border-t border-slate-100">
-                <p class="text-sm text-slate-400">If you have any questions about this Privacy Policy, please contact us at privacy@blogname.com</p>
+                <p class="text-sm text-slate-500">If you have any questions about this Privacy Policy, please contact us at <a href="mailto:azamwaseem44@gmail.com" class="text-crimson-600 font-bold hover:underline">azamwaseem44@gmail.com</a></p>
             </div>
         </div>
     </div>

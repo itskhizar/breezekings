@@ -35,7 +35,7 @@ $database->increment_views($post_id);
 
 $author_info = $database->getUserInfo($post['author']);
 $author_name = $author_info['display_name'] ?? $post['author'] ?? 'Breezekings Editorial';
-$author_img = (!empty($author_info['profile_image']) && file_exists('images/profiles/' . $author_info['profile_image'])) ? 'images/profiles/' . $author_info['profile_image'] : 'images/avatar.png';
+$author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -276,10 +276,10 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
     <?php include 'include/frontend_header.php'; ?>
 
     <!-- Hero Article Header -->
-    <?php $hero_img = $post['featured_image'] ? "images/posts/" . $post['featured_image'] : ""; ?>
+    <?php $hero_img = !empty($post['featured_image']) ? bk_thumb_url($post['featured_image']) : ""; ?>
     <header class="<?php echo $hero_img ? 'relative' : 'bg-navy-900 bg-stripes relative'; ?> py-20 lg:py-32 overflow-hidden">
         <?php if ($hero_img): ?>
-            <img src="<?php echo $hero_img; ?>" class="absolute inset-0 w-full h-full object-cover z-0 opacity-40">
+            <img src="<?php echo $hero_img; ?>" class="absolute inset-0 w-full h-full object-cover z-0 opacity-40" onerror="this.style.display='none'">
         <?php endif; ?>
         <div class="absolute inset-0 bg-gradient-to-r from-navy-950/80 via-navy-900/60 to-transparent z-0"></div>
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex">
@@ -313,7 +313,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                 
                 <div class="flex items-center gap-4 text-xs font-medium uppercase tracking-wider text-slate-300">
                     <div class="flex items-center gap-3">
-                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-8 h-8 rounded-full border-2 border-slate-400 object-cover">
+                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-8 h-8 rounded-full border-2 border-slate-400 object-cover" onerror="this.src='/images/avatar.png'">
                         <span class="text-white"><?php echo htmlspecialchars($author_name); ?></span>
                     </div>
                     <span>&bull;</span>
@@ -342,7 +342,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
 
                     <!-- Author Box -->
                     <div class="mt-16 bg-white border border-slate-200 rounded-lg p-8 flex flex-col sm:flex-row gap-8 items-start shadow-sm">
-                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-24 h-24 rounded-full object-cover shrink-0 border-4 border-slate-50">
+                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-24 h-24 rounded-full object-cover shrink-0 border-4 border-slate-50" onerror="this.src='/images/avatar.png'">
                         <div>
                             <h4 class="text-xl font-serif font-bold text-navy-900 mb-2">About <?php echo htmlspecialchars($author_name); ?></h4>
                             <p class="text-slate-500 text-sm leading-relaxed mb-4">
@@ -442,7 +442,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                         <?php
                         $top_read = $database->get_popular_posts(1);
                         if($tr = mysqli_fetch_assoc($top_read)) {
-                            $tr_thumb = $tr['featured_image'] ? 'images/posts/'.$tr['featured_image'] : 'images/blog-default.jpg';
+                            $tr_thumb = bk_thumb_url($tr['featured_image']);
                         ?>
                         <div class="bg-navy-950 rounded-xl overflow-hidden shadow-xl border border-white/5 group">
                             <div class="p-4 bg-crimson-600 flex justify-between items-center">
@@ -450,7 +450,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                 <i class="fa-solid fa-fire-flame-curved text-white/50 text-xs"></i>
                             </div>
                             <a href="<?php echo bk_post_url($tr); ?>" class="block relative h-48 lg:h-64">
-                                <img src="<?php echo $tr_thumb; ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="<?php echo htmlspecialchars($tr['title']); ?>">
+                                <img src="<?php echo $tr_thumb; ?>" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="<?php echo htmlspecialchars($tr['title']); ?>" onerror="this.src='/images/blog-default.jpg'">
                                 <div class="absolute inset-0 bg-gradient-to-t from-navy-950 to-transparent"></div>
                                 <div class="absolute bottom-4 left-4 right-4">
                                     <h4 class="text-lg font-serif font-bold text-white leading-tight group-hover:text-crimson-400 transition-colors line-clamp-2"><?php echo htmlspecialchars($tr['title']); ?></h4>
@@ -491,12 +491,12 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                     $trending = $database->get_popular_posts(4);
                                     mysqli_data_seek($trending, 1);
                                     while($t = mysqli_fetch_assoc($trending)) {
-                                        $t_thumb = $t['featured_image'] ? 'images/posts/'.$t['featured_image'] : 'images/blog-default.jpg';
+                                        $t_thumb = bk_thumb_url($t['featured_image']);
                                         $t_url = bk_post_url($t);
                                     ?>
                                     <a href="<?php echo $t_url; ?>" class="flex gap-4 group">
                                         <div class="w-20 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200">
-                                            <img src="<?php echo $t_thumb; ?>" alt="<?php echo htmlspecialchars($t['title']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+                                            <img src="<?php echo $t_thumb; ?>" alt="<?php echo htmlspecialchars($t['title']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                         </div>
                                         <div>
                                             <h4 class="text-xs font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors line-clamp-2"><?php echo htmlspecialchars($t['title']); ?></h4>
@@ -552,7 +552,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                             if ($count >= 5) break; // Limit to 5 in sidebar
                                             $count++;
                                             
-                                            $lp_thumb = $lp['featured_image'] ? 'images/posts/' . $lp['featured_image'] : 'images/blog-default.jpg';
+                                            $lp_thumb = bk_thumb_url($lp['featured_image']);
                                             $lp_date = date('M d, Y', strtotime($lp['created_at']));
                                             $lp_cat = htmlspecialchars($lp['category'] ?? 'General');
                                             $lp_title = htmlspecialchars($lp['title']);
@@ -561,7 +561,7 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                                     ?>
                                             <article class="flex gap-4 group items-center" role="listitem">
                                                 <a href="<?php echo $lp_url; ?>" class="w-24 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-slate-100 shadow-sm">
-                                                    <img src="<?php echo $lp_thumb; ?>" alt="<?php echo $lp_title; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+                                                    <img src="<?php echo $lp_thumb; ?>" alt="<?php echo $lp_title; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                                 </a>
                                                 <div class="flex-1 min-w-0">
                                                     <a href="<?php echo $lp_cat_url; ?>" class="text-[9px] font-bold text-crimson-600 uppercase tracking-wider mb-1 block">
@@ -597,12 +597,12 @@ $author_img = (!empty($author_info['profile_image']) && file_exists('images/prof
                 $related = $database->get_related_posts($post['category_id'], $post_id, 3);
                 if ($related && mysqli_num_rows($related) > 0) {
                     while ($r = mysqli_fetch_assoc($related)) {
-                        $r_thumb = $r['featured_image'] ? 'images/posts/'.$r['featured_image'] : 'images/blog-default.jpg';
+                        $r_thumb = bk_thumb_url($r['featured_image']);
                         $r_url = bk_post_url($r);
                 ?>
                 <article class="group">
                     <a href="<?php echo $r_url; ?>" class="block h-48 overflow-hidden rounded-sm mb-4 relative">
-                        <img src="<?php echo $r_thumb; ?>" alt="<?php echo htmlspecialchars($r['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                        <img src="<?php echo $r_thumb; ?>" alt="<?php echo htmlspecialchars($r['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                     </a>
                     <span class="text-crimson-600 text-[10px] font-bold uppercase tracking-wider block mb-2"><?php echo strtoupper(htmlspecialchars($r['category'])); ?></span>
                     <h3 class="text-lg font-serif font-bold text-navy-900 leading-snug group-hover:text-crimson-600 transition-colors">

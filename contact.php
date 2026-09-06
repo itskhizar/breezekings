@@ -10,7 +10,7 @@
     ?>
     <title>Contact Us | Breezekings</title>
     <meta name="title" content="Contact Us | Breezekings">
-    <meta name="description" content="Get in touch with Breezekings. Send us your story tips, feedback or advertising enquiries at info@breezekings.com.">
+    <meta name="description" content="Get in touch with Breezekings. Send us your story tips, feedback or advertising enquiries at azamwaseem44@gmail.com.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="<?php echo $cur_url_c; ?>">
     <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
@@ -42,6 +42,7 @@
     }
     </script>
 
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -51,8 +52,8 @@
                         serif: ['Playfair Display', 'serif'],
                     },
                     colors: {
-                        navy: { 800: '#1e2336', 900: '#151928', 950: '#0d101a' },
-                        crimson: { 500: '#e12b38', 600: '#c5202b' }
+                        navy: { 800: '#1e2336', 900: '#0B1F3A', 950: '#071526' },
+                        crimson: { 500: '#e12b38', 600: '#C8102E', 700: '#a31a23' }
                     }
                 }
             }
@@ -64,14 +65,15 @@
         body { font-family: 'Inter', sans-serif; background-color: #fafafa; }
     </style>
 </head>
-<body class="text-slate-800 antialiased">
+<body class="text-slate-800 antialiased bg-slate-50">
 
     <?php include 'include/frontend_header.php'; ?>
 
     <div class="bg-navy-900 py-16 text-center">
         <div class="max-w-4xl mx-auto px-4">
-            <h1 class="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Get in Touch</h1>
-            <p class="text-slate-400">Have a story idea or feedback? We'd love to hear from you at <strong class="text-white">info@breezekings.com</strong></p>
+            <span class="inline-block px-3 py-1 bg-crimson-600 text-white text-xs font-bold uppercase tracking-widest rounded-full mb-3">Get in Touch</span>
+            <h1 class="text-4xl md:text-5xl font-serif font-bold text-white mb-4">We'd Love to Hear From You</h1>
+            <p class="text-slate-300 max-w-xl mx-auto text-sm md:text-base">Have a story idea, feedback, or advertising inquiry? Reach our team directly at <a href="mailto:azamwaseem44@gmail.com" class="text-white font-bold underline hover:text-crimson-400">azamwaseem44@gmail.com</a></p>
         </div>
     </div>
 
@@ -79,37 +81,37 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
             
             <!-- Contact Info -->
-            <div class="lg:col-span-1 space-y-8">
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 flex items-start gap-5">
                     <div class="w-12 h-12 bg-crimson-50 text-crimson-600 rounded-xl flex items-center justify-center shrink-0">
                         <i class="fa-solid fa-envelope text-xl"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-navy-900 mb-1">Email Us</h3>
-                        <p class="text-sm text-slate-500 mb-2">General inquiries &amp; feedback</p>
-                        <a href="mailto:info@breezekings.com" class="text-crimson-600 font-bold hover:underline">info@breezekings.com</a>
+                        <h3 class="font-bold text-navy-900 mb-1">Direct Editorial Email</h3>
+                        <p class="text-xs text-slate-500 mb-2">Pitches, feedback &amp; inquiries</p>
+                        <a href="mailto:azamwaseem44@gmail.com" class="text-crimson-600 font-bold hover:underline text-sm break-all">azamwaseem44@gmail.com</a>
                     </div>
                 </div>
 
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-6">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 flex items-start gap-5">
                     <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-newspaper text-xl"></i>
+                        <i class="fa-solid fa-bullhorn text-xl"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-navy-900 mb-1">Press Room</h3>
-                        <p class="text-sm text-slate-500 mb-2">Media & advertising queries</p>
-                        <a href="mailto:press@blogname.com" class="text-blue-600 font-bold hover:underline">press@blogname.com</a>
+                        <h3 class="font-bold text-navy-900 mb-1">Advertising &amp; Partnerships</h3>
+                        <p class="text-xs text-slate-500 mb-2">Sponsorships &amp; collaborations</p>
+                        <a href="mailto:azamwaseem44@gmail.com" class="text-blue-600 font-bold hover:underline text-sm break-all">azamwaseem44@gmail.com</a>
                     </div>
                 </div>
 
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-6">
-                    <div class="w-12 h-12 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-location-dot text-xl"></i>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 flex items-start gap-5">
+                    <div class="w-12 h-12 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-clock text-xl"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-navy-900 mb-1">Visit Us</h3>
-                        <p class="text-sm text-slate-500 mb-2">Editorial Office</p>
-                        <p class="text-slate-800 font-medium">123 Media Plaza, Digital City, DC 1024</p>
+                        <h3 class="font-bold text-navy-900 mb-1">Response Time</h3>
+                        <p class="text-xs text-slate-500 mb-1">Editorial desk hours</p>
+                        <p class="text-slate-800 text-sm font-semibold">Within 24–48 Business Hours</p>
                     </div>
                 </div>
             </div>

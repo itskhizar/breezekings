@@ -131,3 +131,52 @@ if (!function_exists('bk_category_url')) {
         return '/category/' . $id . '/' . $slug;
     }
 }
+
+if (!function_exists('bk_thumb_url')) {
+    /**
+     * Returns absolute thumbnail URL with fallback for post images
+     */
+    function bk_thumb_url($featured_image = null) {
+        if (!empty($featured_image)) {
+            $img = trim($featured_image);
+            if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
+                return $img;
+            }
+            $img = ltrim($img, '/');
+            if (strpos($img, 'images/') === 0) {
+                return '/' . $img;
+            }
+            return '/images/posts/' . $img;
+        }
+        return '/images/blog-default.jpg';
+    }
+}
+
+if (!function_exists('bk_avatar_url')) {
+    /**
+     * Returns absolute avatar URL with initials-based demo avatar fallback
+     */
+    function bk_avatar_url($profile_image = null, $author_name = 'Breezekings') {
+        if (!empty($profile_image)) {
+            $img = trim($profile_image);
+            if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
+                return $img;
+            }
+            $clean = ltrim($img, '/');
+            if (strpos($clean, 'images/') === 0) {
+                return '/' . $clean;
+            }
+            if (file_exists('images/profiles/' . $clean)) {
+                return '/images/profiles/' . $clean;
+            }
+            if (file_exists('images/' . $clean)) {
+                return '/images/' . $clean;
+            }
+        }
+        if (file_exists('images/avatar.png')) {
+            return '/images/avatar.png';
+        }
+        $name = rawurlencode(trim($author_name ?: 'Breezekings'));
+        return "https://ui-avatars.com/api/?name={$name}&background=0B1F3A&color=ffffff&bold=true&size=128";
+    }
+}

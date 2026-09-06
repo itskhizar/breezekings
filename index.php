@@ -81,7 +81,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                 },
                 "contactPoint": {
                     "@type": "ContactPoint",
-                    "email": "info@breezekings.com",
+                    "email": "azamwaseem44@gmail.com",
                     "contactType": "customer support"
                 }
             }
@@ -370,9 +370,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     }
 
                     if ($hero = mysqli_fetch_assoc($featured_posts)):
-                        $hero_thumb = $hero['featured_image']
-                            ? 'images/posts/' . $hero['featured_image']
-                            : 'images/blog-default.jpg';
+                        $hero_thumb = bk_thumb_url($hero['featured_image']);
                         $hero_date_fmt = date('M d, Y', strtotime($hero['created_at']));
                         $hero_iso = date('c', strtotime($hero['created_at']));
                         $hero_read = $database->getReadingTime($hero['content']);
@@ -389,7 +387,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 "@type": "NewsArticle",
                                 "headline":       "<?php echo addslashes($hero_title); ?>",
                                 "description":    "<?php echo addslashes($hero_excerpt); ?>",
-                                "image":          "<?php echo $site_url . '/' . $hero_thumb; ?>",
+                                "image":          "<?php echo str_starts_with($hero_thumb, 'http') ? $hero_thumb : $site_url . $hero_thumb; ?>",
                                 "datePublished":  "<?php echo $hero_iso; ?>",
                                 "author":         { "@type": "Person", "name": "<?php echo addslashes($hero_author); ?>" },
                                 "publisher":      { "@type": "Organization", "name": "<?php echo $site_name; ?>" },
@@ -405,7 +403,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 <!-- Image -->
                                 <img src="<?php echo $hero_thumb; ?>" alt="<?php echo $hero_title; ?>" itemprop="image"
                                     class="absolute inset-0 w-full h-full object-cover" width="900" height="530"
-                                    loading="eager" fetchpriority="high">
+                                    loading="eager" fetchpriority="high" onerror="this.src='/images/blog-default.jpg'">
 
                                 <!-- Gradient overlay -->
                                 <div class="absolute inset-0 hero-overlay"></div>
@@ -445,8 +443,8 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                         class="flex flex-wrap items-center gap-3 text-slate-400 text-[11px] font-bold tracking-widest uppercase">
                                         <div class="flex items-center gap-2" itemprop="author" itemscope
                                             itemtype="https://schema.org/Person">
-                                            <img src="images/avatar.png" class="w-6 h-6 rounded-full border border-white/20"
-                                                alt="<?php echo $hero_author; ?>" width="24" height="24">
+                                            <img src="<?php echo bk_avatar_url('', $hero_author); ?>" class="w-6 h-6 rounded-full border border-white/20 object-cover"
+                                                alt="<?php echo $hero_author; ?>" width="24" height="24" onerror="this.src='/images/avatar.png'">
                                             <span itemprop="name">BY <?php echo strtoupper($hero_author); ?></span>
                                         </div>
                                         <span class="opacity-30" aria-hidden="true">|</span>
@@ -505,7 +503,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-7" role="list">
                     <?php if ($has_posts):
                         while ($post = mysqli_fetch_assoc($latest_posts)):
-                            $thumb = $post['featured_image'] ? 'images/posts/' . $post['featured_image'] : 'images/blog-default.jpg';
+                            $thumb = bk_thumb_url($post['featured_image']);
                             $post_date = date('M d, Y', strtotime($post['created_at']));
                             $post_iso = date('c', strtotime($post['created_at']));
                             $read_time = $database->getReadingTime($post['content']);
@@ -527,7 +525,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                     class="block h-48 card-img-wrap flex-shrink-0" itemprop="url" tabindex="-1"
                                     aria-hidden="true">
                                     <img src="<?php echo $thumb; ?>" alt="<?php echo $post_title; ?>" itemprop="image"
-                                        class="w-full h-full object-cover" width="500" height="300" loading="lazy">
+                                        class="w-full h-full object-cover" width="500" height="300" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                 </a>
 
                                 <!-- Card body -->
@@ -637,7 +635,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     <?php
                     $top_read = $database->get_popular_posts(1);
                     if ($tr = mysqli_fetch_assoc($top_read)):
-                        $tr_thumb = $tr['featured_image'] ? 'images/posts/' . $tr['featured_image'] : 'images/blog-default.jpg';
+                        $tr_thumb = bk_thumb_url($tr['featured_image']);
                         $tr_title = htmlspecialchars($tr['title']);
                         $tr_excerpt = htmlspecialchars($tr['excerpt'] ?? substr(strip_tags($tr['content']), 0, 120));
                         $tr_url = bk_post_url($tr);
@@ -658,7 +656,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 aria-label="<?php echo $tr_title; ?>">
                                 <img src="<?php echo $tr_thumb; ?>" alt="<?php echo $tr_title; ?>"
                                     class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500"
-                                    width="380" height="176" loading="lazy">
+                                    width="380" height="176" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                 <div class="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-900/60 to-transparent">
                                 </div>
                                 <div class="absolute bottom-4 left-4 right-4">
@@ -721,7 +719,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                             }
                             $t_count = 1;
                             while ($t = mysqli_fetch_assoc($trending)):
-                                $t_thumb = $t['featured_image'] ? 'images/posts/' . $t['featured_image'] : 'images/blog-default.jpg';
+                                $t_thumb = bk_thumb_url($t['featured_image']);
                                 $t_title = htmlspecialchars($t['title']);
                                 $t_url = bk_post_url($t);
                                 ?>
@@ -735,7 +733,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                         class="w-[68px] h-[52px] shrink-0 rounded-lg overflow-hidden border border-slate-100 card-img-wrap block"
                                         tabindex="-1" aria-hidden="true">
                                         <img src="<?php echo $t_thumb; ?>" alt="<?php echo $t_title; ?>"
-                                            class="w-full h-full object-cover" width="68" height="52" loading="lazy">
+                                            class="w-full h-full object-cover" width="68" height="52" loading="lazy" onerror="this.src='/images/blog-default.jpg'">
                                     </a>
                                     <!-- Text -->
                                     <div class="flex-1 min-w-0">
