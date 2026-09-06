@@ -1,0 +1,13 @@
+<?php
+/**
+ * Local / Production Private Database Configuration
+ * 
+ * Instructions:
+ * Copy this file to `config.local.php` on your server and enter your credentials.
+ * `config.local.php` is ignored by Git and will NEVER be uploaded to GitHub.
+ */
+
+define("DB_SERVER", "localhost");
+define("DB_USER", "huntcqrp_breezekings");
+define("DB_PASS", "breezekings0920");
+define("DB_NAME", "huntcqrp_breezekings");

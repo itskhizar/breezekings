@@ -1,31 +1,33 @@
 <?php
 
-$is_local = (
-    php_sapi_name() === 'cli' && (DIRECTORY_SEPARATOR === '\\' || !file_exists('/home/huntcqrp'))
-) || (
-    isset($_SERVER['HTTP_HOST']) && (
-        strpos($_SERVER['HTTP_HOST'], 'localhost') !== false || 
-        strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false
-    )
-);
-
-if ($is_local) {
-    define("DB_SERVER", "localhost");
-    define("DB_USER", "root");
-    define("DB_PASS", "");
-    define("DB_NAME", "blogging");
-} else {
-    define("DB_SERVER", "localhost");
-    define("DB_USER", "huntcqrp_breezekings");
-    define("DB_PASS", "breezekings0920");
-    define("DB_NAME", "huntcqrp_breezekings");
+// 1. Check for private local/server configuration file (never committed to git)
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require_once(__DIR__ . '/config.local.php');
 }
 
+// 2. Dynamic Fallback if not configured via config.local.php
+if (!defined('DB_SERVER')) {
+    $is_local = (
+        php_sapi_name() === 'cli' && (DIRECTORY_SEPARATOR === '\\' || !file_exists('/home/huntcqrp'))
+    ) || (
+        isset($_SERVER['HTTP_HOST']) && (
+            strpos($_SERVER['HTTP_HOST'], 'localhost') !== false || 
+            strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false
+        )
+    );
 
-// define("DB_SERVER", "localhost");
-// define("DB_USER", "u916098885_academy");
-// define("DB_PASS", "Asad@1234A");
-// define("DB_NAME", "u916098885_academy");
+    if ($is_local) {
+        define("DB_SERVER", getenv('DB_SERVER') ?: "localhost");
+        define("DB_USER", getenv('DB_USER') ?: "root");
+        define("DB_PASS", getenv('DB_PASS') !== false ? getenv('DB_PASS') : "");
+        define("DB_NAME", getenv('DB_NAME') ?: "blogging");
+    } else {
+        define("DB_SERVER", getenv('DB_SERVER') ?: "localhost");
+        define("DB_USER", getenv('DB_USER') ?: "huntcqrp_breezekings");
+        define("DB_PASS", getenv('DB_PASS') ?: "breezekings0920");
+        define("DB_NAME", getenv('DB_NAME') ?: "huntcqrp_breezekings");
+    }
+}
 
 /**
  * Database Table Constants - these constants
