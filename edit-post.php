@@ -315,7 +315,7 @@ if ($session->userlevel < 1 && !$is_author) {
                                     </div>
 
                                     <div class="pt-4">
-                                        <button type="submit" onclick="document.getElementById('postContent').value = document.getElementById('editor').innerHTML;" class="w-full bg-brand-blue hover:bg-brand-hover text-white font-semibold py-2.5 rounded shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+                                        <button type="button" onclick="submitPost()" class="w-full bg-brand-blue hover:bg-brand-hover text-white font-semibold py-2.5 rounded shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
                                             <i class="fa-solid fa-save"></i> Save Changes
                                         </button>
                                     </div>
@@ -1105,26 +1105,6 @@ if ($session->userlevel < 1 && !$is_author) {
         editor.addEventListener('input', updateWordCount);
         updateWordCount();
 
-        // ── Slug generation ──────────────────────────────────────────────────
-        const postTitle = document.getElementById('postTitle');
-        const postSlug  = document.getElementById('postSlug');
-
-        function slugify(text) {
-            return text.toString().toLowerCase().trim()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9\s-]/g, '')
-                .replace(/[\s-]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-        }
-
-        function generateSlug() {
-            if (postTitle && postSlug) {
-                const s = slugify(postTitle.value);
-                postSlug.value = s || 'article';
-            }
-        }
-
         // ── Validation / Draft Fallback ──────────────────────────────────────
         const postForm       = document.getElementById('postForm');
         const postStatus     = document.getElementById('postStatus');
@@ -1160,6 +1140,17 @@ if ($session->userlevel < 1 && !$is_author) {
         });
 
         checkMandatoryFields();
+
+        // ── Auto-update slug preview when title changes (edit mode keeps existing slug by default) ──
+        if (postTitle) {
+            postTitle.addEventListener('input', function() {
+                // Only auto-update if user hasn't customised the slug
+                const currentSlug = postSlug ? postSlug.value.trim() : '';
+                const slugFromTitle = slugify(this.value);
+                // In edit mode we don't auto-override existing slugs — just update preview display
+                updateSlugDisplay();
+            });
+        }
     </script>
 
 </body>
