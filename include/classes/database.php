@@ -110,6 +110,28 @@ class MySQLDB
             mysqli_query($this->connection, "ALTER TABLE `users` ADD `$field` $definition");
          }
       }
+
+      // AdSense & Launch Readiness: Remove placeholder posts
+      mysqli_query($this->connection, "DELETE FROM `posts` WHERE `title` = 'Lorem Ipsum' OR `content` LIKE '%What is Lorem Ipsum?%'");
+
+      // Clean up duplicate Sports category (id=9 merged into id=4)
+      mysqli_query($this->connection, "UPDATE `posts` SET `category_id` = 4 WHERE `category_id` = 9");
+      mysqli_query($this->connection, "DELETE FROM `categories` WHERE `id` = 9 AND LOWER(`category`) = 'sports'");
+
+      // Ensure 9 official core categories exist
+      $core_cats = ['News', 'Business', 'Technology', 'Fashion', 'Games', 'Health', 'Entertainment', 'Sports', 'Lifestyle'];
+      foreach ($core_cats as $cc) {
+         $cc_esc = mysqli_real_escape_string($this->connection, $cc);
+         $chk = mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$cc_esc') LIMIT 1");
+         if (mysqli_num_rows($chk) == 0) {
+            mysqli_query($this->connection, "INSERT INTO `categories` (`category`) VALUES ('$cc_esc')");
+         }
+      }
+
+      // Standardize real author bylines
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Breezekings Editorial Team' WHERE (`registration_no` = 'FN-admin' OR `username` = 'admin') AND (`display_name` = 'Admin' OR `display_name` IS NULL OR `display_name` = '')");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `registration_no` = 'AUTH-1024' AND (`display_name` = 'KHIZAR AHMAD' OR `display_name` IS NULL)");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Waseem Azam' WHERE `registration_no` = 'AUTH-1026'");
    }
 
    function generateExcerpt($content, $length = 160)

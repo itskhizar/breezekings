@@ -24,6 +24,13 @@ if (!$cat_data) {
     exit();
 }
 
+// 301 Redirect old duplicate category id=9 (Sports) to canonical category id=4 (Sports)
+if ($cat_id == 9) {
+    header("HTTP/1.1 301 Moved Permanently");
+    header("Location: " . bk_base_url() . "/category/4/sports");
+    exit();
+}
+
 $category_name = $cat_data['category'];
 $clean_cat_rel = bk_category_url($cat_id, $category_name);
 
@@ -40,7 +47,8 @@ $num_articles = mysqli_num_rows($posts_result);
 
 $site_url_cat   = bk_base_url();
 $canonical_cat  = $site_url_cat . $clean_cat_rel;
-$cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($category_name) . " on Breezekings. In-depth analysis, expert viewpoints, and fresh reporting.";
+$cat_intro      = bk_category_description($category_name);
+$cat_meta_desc  = htmlspecialchars(mb_substr(strip_tags($cat_intro), 0, 155));
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -200,7 +208,11 @@ $cat_meta_desc  = "Explore all published articles in " . htmlspecialchars($categ
                 <span class="text-white" aria-current="page"><?php echo htmlspecialchars($category_name); ?></span>
             </nav>
             <h1 class="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-4"><?php echo htmlspecialchars($category_name); ?></h1>
-            <p class="text-crimson-500 text-xs font-bold tracking-widest uppercase"><?php echo $num_articles; ?> Articles</p>
+            <p class="text-slate-300 text-sm md:text-base leading-relaxed max-w-3xl mb-5"><?php echo htmlspecialchars($cat_intro); ?></p>
+            <p class="text-crimson-400 text-xs font-bold tracking-widest uppercase flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-xs"></i>
+                <span><?php echo $num_articles; ?> Published <?php echo $num_articles == 1 ? 'Article' : 'Articles'; ?></span>
+            </p>
         </div>
     </div>
 

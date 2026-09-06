@@ -91,7 +91,8 @@ Options -Indexes
     RewriteRule ^blog/([a-zA-Z0-9_-]+)(?:/([a-zA-Z0-9_-]*))?/?$ single.php?id=$1&slug=$2 [L,QSA]
 
     # 4. Clean Category Permalinks
-    # /category/5/technology or /category/5
+    # Redirect duplicate category 9 (Sports) to canonical category 4 (Sports)
+    RewriteRule ^category/9(?:/.*)?$ /category/4/sports [R=301,L]
     RewriteRule ^category/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ category.php?id=$1&slug=$2 [L,QSA]
 
     # 5. Extensionless PHP files (e.g. /about -> about.php, /contact -> contact.php)
@@ -99,3 +100,7 @@ Options -Indexes
     RewriteCond %{REQUEST_FILENAME}.php -f
     RewriteRule ^(.*)$ $1.php [L,QSA]
 </IfModule>
+
+# Custom On-Brand 404 Error Document
+ErrorDocument 404 /404.php
+

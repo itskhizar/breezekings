@@ -1,0 +1,5 @@
+# Breezekings — Authorized Digital Sellers (ads.txt)
+# https://breezekings.com/ads.txt
+# Replace pub-0000000000000000 with your actual Google AdSense Publisher ID upon approval:
+# Example:
+# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

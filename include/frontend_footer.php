@@ -224,9 +224,10 @@ $footer_email = "azamwaseem44@gmail.com";
                 <h4 class="bk-footer-col-title">Company &amp; Legal</h4>
                 <ul class="bk-footer-links">
                     <li><a href="/about"><i class="fa-solid fa-chevron-right"></i> About Us</a></li>
-                    <li><a href="/contact"><i class="fa-solid fa-chevron-right"></i> Contact Support</a></li>
+                    <li><a href="/contact"><i class="fa-solid fa-chevron-right"></i> Contact Us</a></li>
                     <li><a href="/privacy-policy"><i class="fa-solid fa-chevron-right"></i> Privacy Policy</a></li>
-                    <li><a href="/termsofservices"><i class="fa-solid fa-chevron-right"></i> Terms of Service</a></li>
+                    <li><a href="/terms-and-conditions"><i class="fa-solid fa-chevron-right"></i> Terms &amp; Conditions</a></li>
+                    <li><a href="/cookie-policy"><i class="fa-solid fa-chevron-right"></i> Cookie Policy / Ads Disclosure</a></li>
                     <li><a href="/sitemap.xml" target="_blank"><i class="fa-solid fa-chevron-right"></i> XML Sitemap</a></li>
                     <li><a href="/rss.xml" target="_blank"><i class="fa-solid fa-chevron-right"></i> RSS Feed</a></li>
                 </ul>
@@ -248,9 +249,11 @@ $footer_email = "azamwaseem44@gmail.com";
                 &copy; <?php echo date('Y'); ?> Breezekings. All rights reserved.
             </p>
             <nav class="bk-footer-legal" aria-label="Legal links">
-                <a href="/privacy-policy">Privacy Policy</a>
-                <a href="/termsofservices">Terms of Service</a>
+                <a href="/about">About</a>
                 <a href="/contact">Contact</a>
+                <a href="/privacy-policy">Privacy Policy</a>
+                <a href="/terms-and-conditions">Terms &amp; Conditions</a>
+                <a href="/cookie-policy">Cookie Policy</a>
             </nav>
         </div>
 

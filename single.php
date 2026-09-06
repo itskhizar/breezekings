@@ -350,14 +350,61 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                         <div>
                             <h4 class="text-xl font-serif font-bold text-navy-900 mb-2">About <?php echo htmlspecialchars($author_name); ?></h4>
                             <p class="text-slate-500 text-sm leading-relaxed mb-4">
-                                <?php echo htmlspecialchars($author_name); ?> is a contributor at The Blog. They have been sharing insightful articles since joining the platform.
+                                <?php echo htmlspecialchars($author_name); ?> is a senior editorial contributor at Breezekings, writing rigorous analysis and practical insights across technology, culture, and modern business.
                             </p>
                             <div class="flex gap-4">
-                                <a href="#" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors">FOLLOW ON TWITTER</a>
-                                <a href="#" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors">VIEW PORTFOLIO</a>
+                                <a href="mailto:azamwaseem44@gmail.com" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors flex items-center gap-1.5">
+                                    <i class="fa-solid fa-envelope text-xs"></i> Contact Author
+                                </a>
+                                <a href="/about" class="text-[10px] font-bold text-navy-900 hover:text-crimson-600 uppercase tracking-widest transition-colors flex items-center gap-1.5">
+                                    <i class="fa-solid fa-users text-xs"></i> Editorial Team
+                                </a>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Related Articles in Category -->
+                    <?php
+                    $cat_id_num = (int)$post['category_id'];
+                    $cur_post_id = (int)$post['id'];
+                    $related_query = $database->query("SELECT p.*, c.category FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = $cat_id_num AND p.id != $cur_post_id AND p.status = 'Published' AND p.is_deleted = 0 ORDER BY p.id DESC LIMIT 3");
+                    if ($related_query && mysqli_num_rows($related_query) > 0) {
+                    ?>
+                    <section class="mt-14 pt-12 border-t border-slate-200">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-navy-900 flex items-center gap-3">
+                                <span class="w-2.5 h-6 bg-crimson-600 rounded-sm inline-block"></span>
+                                Related in <?= htmlspecialchars($post['category'] ?? 'Category') ?>
+                            </h3>
+                            <a href="<?= bk_category_url($post['category_id'], $post['category'] ?? '') ?>" class="text-xs font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest flex items-center gap-1.5 transition-colors">
+                                View Category <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            <?php while ($rel = mysqli_fetch_assoc($related_query)): 
+                                $rel_url = bk_post_url($rel);
+                                $rel_img = bk_thumb_url($rel['featured_image']);
+                            ?>
+                            <article class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-all group flex flex-col justify-between">
+                                <div>
+                                    <a href="<?= $rel_url ?>" class="block relative aspect-video overflow-hidden">
+                                        <img src="<?= $rel_img ?>" alt="<?= htmlspecialchars($rel['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='/images/blog-default.jpg'">
+                                    </a>
+                                    <div class="p-4">
+                                        <span class="text-[10px] font-bold text-crimson-600 uppercase tracking-widest block mb-1.5"><?= htmlspecialchars($rel['category'] ?? '') ?></span>
+                                        <h4 class="font-bold text-sm text-navy-900 group-hover:text-crimson-600 transition-colors line-clamp-2 leading-snug">
+                                            <a href="<?= $rel_url ?>"><?= htmlspecialchars($rel['title']) ?></a>
+                                        </h4>
+                                    </div>
+                                </div>
+                                <div class="px-4 pb-4 pt-1 text-[11px] text-slate-400">
+                                    <?= date('M d, Y', strtotime($rel['created_at'])) ?>
+                                </div>
+                            </article>
+                            <?php endwhile; ?>
+                        </div>
+                    </section>
+                    <?php } ?>
 
                     <!-- Comments Section -->
                     <section id="comments" class="mt-16 border-t border-slate-100 pt-16">
