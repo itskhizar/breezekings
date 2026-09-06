@@ -60,7 +60,7 @@ $cat_meta_desc  = htmlspecialchars(mb_substr(strip_tags($cat_intro), 0, 155));
     <title><?php echo htmlspecialchars($category_name); ?> Articles | Breezekings</title>
     <meta name="title" content="<?php echo htmlspecialchars($category_name); ?> Articles | Breezekings">
     <meta name="description" content="<?php echo $cat_meta_desc; ?>">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <meta name="robots" content="<?php echo $num_articles > 0 ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow'; ?>">
     <link rel="canonical" href="<?php echo $canonical_cat; ?>">
 
     <!-- Open Graph -->

@@ -1,43 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Breezekings — Sitemap Index
+    Breezekings — Sitemap Index (Static Stub)
+    Dynamic sitemap served at: https://breezekings.com/sitemap.xml via sitemap-xml.php
     Search Console: https://search.google.com/search-console
-    Direct Feed: https://breezekings.com/sitemap.xml
+    Last updated: 2026-09-06
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
     <url>
         <loc>https://breezekings.com/</loc>
-        <lastmod>2026-09-05</lastmod>
+        <lastmod>2026-09-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
 
     <url>
         <loc>https://breezekings.com/about</loc>
-        <lastmod>2026-09-05</lastmod>
+        <lastmod>2026-09-06</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
 
     <url>
         <loc>https://breezekings.com/contact</loc>
-        <lastmod>2026-09-05</lastmod>
+        <lastmod>2026-09-06</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
 
     <url>
         <loc>https://breezekings.com/privacy-policy</loc>
-        <lastmod>2026-09-05</lastmod>
+        <lastmod>2026-09-06</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
 
     <url>
         <loc>https://breezekings.com/termsofservices</loc>
-        <lastmod>2026-09-05</lastmod>
+        <lastmod>2026-09-06</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+
+    <url>
+        <loc>https://breezekings.com/cookie-policy</loc>
+        <lastmod>2026-09-06</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+
+    <url>
+        <loc>https://breezekings.com/terms-and-conditions</loc>
+        <lastmod>2026-09-06</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>

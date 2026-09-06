@@ -10,7 +10,7 @@ $cur_url_a   = $site_url_a . '/about';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us | Breezekings</title>
     <meta name="title" content="About Us | Breezekings">
-    <meta name="description" content="Learn about Breezekings — an independent digital publication covering news, business, technology, fashion, games, health, entertainment, sports, and lifestyle.">
+    <meta name="description" content="Learn about Breezekings — an independent digital publication covering News, Business, Technology, Health, Entertainment, and Lifestyle.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="<?php echo $cur_url_a; ?>">
     <link rel="icon" type="image/svg+xml" href="/images/breezekings-icon-red.svg">
@@ -36,7 +36,7 @@ $cur_url_a   = $site_url_a . '/about';
         "@type": "AboutPage",
         "name": "About Us | Breezekings",
         "url": "<?php echo $cur_url_a; ?>",
-        "description": "Learn about Breezekings — an independent digital publication covering news, business, technology, fashion, games, health, entertainment, sports, and lifestyle.",
+        "description": "Learn about Breezekings — an independent digital publication covering News, Business, Technology, Health, Entertainment, and Lifestyle.",
         "publisher": {
             "@type": "Organization",
             "name": "Breezekings",
@@ -92,7 +92,7 @@ $cur_url_a   = $site_url_a . '/about';
                 <span class="text-crimson-600 font-bold uppercase tracking-widest text-xs mb-4 block">Our Editorial Standard</span>
                 <h2 class="text-3xl md:text-4xl font-serif font-bold text-navy-900 mb-6">In-Depth Reporting Without the Noise</h2>
                 <p class="text-slate-600 text-base md:text-lg leading-relaxed mb-6">
-                    <strong class="text-navy-900 font-semibold">Breezekings</strong> is an independent digital publication covering the stories, trends, and ideas shaping everyday life &mdash; from breaking news and business to technology, fashion, games, health, entertainment, sports, and lifestyle.
+                    <strong class="text-navy-900 font-semibold">Breezekings</strong> is an independent digital publication covering News, Business, Technology, Health, Entertainment, and Lifestyle &mdash; clear, practical articles for readers who want the useful version of the story, not just the headline.
                 </p>
                 <p class="text-slate-600 text-base md:text-lg leading-relaxed mb-8">
                     We started Breezekings with a simple goal: give readers clear, well-researched articles they can actually use, without the noise. Every category on this site is run with the same standard &mdash; accurate information, credited sources, and a focus on what matters to the reader, not just what trends.
@@ -100,8 +100,8 @@ $cur_url_a   = $site_url_a . '/about';
                 
                 <div class="grid grid-cols-2 gap-8 pt-4 border-t border-slate-200">
                     <div>
-                        <h4 class="text-3xl font-bold text-navy-900 mb-1">9</h4>
-                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Core Editorial Desks</p>
+                        <h4 class="text-3xl font-bold text-navy-900 mb-1">6</h4>
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Active Editorial Desks</p>
                     </div>
                     <div>
                         <h4 class="text-3xl font-bold text-navy-900 mb-1">100%</h4>
@@ -118,8 +118,8 @@ $cur_url_a   = $site_url_a . '/about';
                             <i class="fa-solid fa-check text-xs"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-slate-900 text-sm">Timely Coverage Across 9 Core Categories</h4>
-                            <p class="text-xs text-slate-500 mt-1">News, Business, Technology, Fashion, Games, Health, Entertainment, Sports, and Lifestyle.</p>
+                            <h4 class="font-bold text-slate-900 text-sm">Timely Coverage Across 6 Active Categories</h4>
+                             <p class="text-xs text-slate-500 mt-1">News, Business, Technology, Health, Entertainment, and Lifestyle.</p>
                         </div>
                     </li>
                     <li class="flex items-start gap-4">

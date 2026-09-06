@@ -8,10 +8,10 @@ if (!$conn) {
 
 // ── SEO: gather data before output ──────────────────────────────────────────
 $site_name    = 'Breezekings';
-$site_tagline = 'Fresh Perspectives on Tech, Culture & Beyond';
+$site_tagline = 'Technology, Business, Health, Entertainment, Lifestyle & News';
 $site_url     = bk_base_url();
 $current_url  = $site_url . '/';
-$meta_description = 'Breezekings — your go-to blog for fresh takes on technology, culture, business and lifestyle. Rigorously written, beautifully presented.';
+$meta_description = 'Breezekings covers Technology, Business, Health, Entertainment, Lifestyle, and News — clear, practical articles for readers who want the useful version of the story, not just the headline.';
 $og_image  = $site_url . '/images/breezekings-icon-red.svg';
 $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
 ?>

@@ -196,7 +196,7 @@ if ($session->userlevel < 4) {
                             <tbody class="text-sm divide-y divide-slate-100 bg-white">
                                 
                                 <?php
-                                $result = $database->get_all_categories();
+                                $result = $database->get_all_categories_admin();
                                 if ($result && mysqli_num_rows($result) > 0) {
                                     $count = 1;
                                     while ($row = mysqli_fetch_assoc($result)) {

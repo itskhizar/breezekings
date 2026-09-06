@@ -114,17 +114,50 @@ class MySQLDB
       // AdSense & Launch Readiness: Remove placeholder posts
       mysqli_query($this->connection, "DELETE FROM `posts` WHERE `title` = 'Lorem Ipsum' OR `content` LIKE '%What is Lorem Ipsum?%'");
 
-      // Clean up duplicate Sports category (id=9 merged into id=4)
-      mysqli_query($this->connection, "UPDATE `posts` SET `category_id` = 4 WHERE `category_id` = 9");
-      mysqli_query($this->connection, "DELETE FROM `categories` WHERE `id` = 9 AND LOWER(`category`) = 'sports'");
+      // ── Category Architecture: add nav_visible column ────────────────
+      $res_nv = mysqli_query($this->connection, "SHOW COLUMNS FROM `categories` LIKE 'nav_visible'");
+      if (mysqli_num_rows($res_nv) == 0) {
+         mysqli_query($this->connection, "ALTER TABLE `categories` ADD `nav_visible` TINYINT(1) NOT NULL DEFAULT 1");
+      }
 
-      // Ensure 9 official core categories exist
-      $core_cats = ['News', 'Business', 'Technology', 'Fashion', 'Games', 'Health', 'Entertainment', 'Sports', 'Lifestyle'];
-      foreach ($core_cats as $cc) {
+      // Ensure 6 Phase-1 core categories exist and are nav_visible
+      $phase1_cats = ['News', 'Business', 'Technology', 'Health', 'Entertainment', 'Lifestyle'];
+      foreach ($phase1_cats as $cc) {
          $cc_esc = mysqli_real_escape_string($this->connection, $cc);
          $chk = mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$cc_esc') LIMIT 1");
          if (mysqli_num_rows($chk) == 0) {
-            mysqli_query($this->connection, "INSERT INTO `categories` (`category`) VALUES ('$cc_esc')");
+            mysqli_query($this->connection, "INSERT INTO `categories` (`category`, `nav_visible`) VALUES ('$cc_esc', 1)");
+         } else {
+            mysqli_query($this->connection, "UPDATE `categories` SET `nav_visible` = 1 WHERE LOWER(`category`) = LOWER('$cc_esc')");
+         }
+      }
+
+      // Phase-2 categories: keep in DB, hide from nav
+      $phase2_cats = ['Sports', 'Games', 'Fashion'];
+      foreach ($phase2_cats as $cc) {
+         $cc_esc = mysqli_real_escape_string($this->connection, $cc);
+         $chk = mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$cc_esc') LIMIT 1");
+         if (mysqli_num_rows($chk) == 0) {
+            mysqli_query($this->connection, "INSERT INTO `categories` (`category`, `nav_visible`) VALUES ('$cc_esc', 0)");
+         } else {
+            mysqli_query($this->connection, "UPDATE `categories` SET `nav_visible` = 0 WHERE LOWER(`category`) = LOWER('$cc_esc')");
+         }
+      }
+
+      // Merge duplicate Sports (id=9 → id=4), then ensure Phase-2 nav_visible=0
+      mysqli_query($this->connection, "UPDATE `posts` SET `category_id` = 4 WHERE `category_id` = 9");
+      mysqli_query($this->connection, "DELETE FROM `categories` WHERE `id` = 9 AND LOWER(`category`) = 'sports'");
+
+      // Drop template-drift categories (Education, Home Improvement, Travel)
+      // Delete their posts first to avoid FK issues, then delete the category
+      $drop_cats = ['Education', 'Home Improvement', 'Travel'];
+      foreach ($drop_cats as $dc) {
+         $dc_esc = mysqli_real_escape_string($this->connection, $dc);
+         $dc_row = mysqli_fetch_assoc(mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$dc_esc') LIMIT 1"));
+         if ($dc_row) {
+            $dc_id = (int)$dc_row['id'];
+            mysqli_query($this->connection, "DELETE FROM `posts` WHERE `category_id` = $dc_id");
+            mysqli_query($this->connection, "DELETE FROM `categories` WHERE `id` = $dc_id");
          }
       }
 
@@ -338,9 +371,30 @@ class MySQLDB
       return mysqli_query($this->connection, $q);
    }
 
+   /**
+    * Public nav: only Phase-1 (nav_visible=1) categories, ordered by name.
+    */
    function get_all_categories()
    {
+      $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c WHERE c.nav_visible = 1 ORDER BY category ASC";
+      return mysqli_query($this->connection, $q);
+   }
+
+   /**
+    * Admin panel: all categories regardless of nav_visible.
+    */
+   function get_all_categories_admin()
+   {
       $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c ORDER BY category ASC";
+      return mysqli_query($this->connection, $q);
+   }
+
+   /**
+    * Sitemap: only Phase-1 nav-visible categories with at least 1 published post.
+    */
+   function get_nav_categories_for_sitemap()
+   {
+      $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c WHERE c.nav_visible = 1 HAVING post_count > 0 ORDER BY category ASC";
       return mysqli_query($this->connection, $q);
    }
 

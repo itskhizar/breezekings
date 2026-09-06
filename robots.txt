@@ -1,6 +1,6 @@
 # Breezekings — robots.txt
 # Generated for: https://breezekings.com
-# Last updated: 2025-09-05
+# Last updated: 2026-09-06
 #
 # Purpose: Guide search engine crawlers to useful content
 # and block admin/internal pages from indexing.
@@ -39,6 +39,7 @@ Disallow: /leftbar.php
 Disallow: /leftbar-menu-content.php
 Disallow: /navbar.php
 Disallow: /foot.php
+Disallow: /410.php
 Disallow: /include/
 Disallow: /assets/
 Disallow: /scratch/

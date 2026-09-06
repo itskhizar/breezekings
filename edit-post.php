@@ -252,7 +252,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                                     <select name="category_id" required class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue">
                                         <option value="">Select Category</option>
                                         <?php
-                                        $cats = $database->get_all_categories();
+                                        $cats = $database->get_all_categories_admin();
                                         while ($cat = mysqli_fetch_assoc($cats)) {
                                             $sel = ($cat['id'] == $post['category_id']) ? 'selected' : '';
                                             echo "<option value='{$cat['id']}' $sel>{$cat['category']}</option>";

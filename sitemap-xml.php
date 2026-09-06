@@ -45,11 +45,13 @@ echo '        http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd"
 
 // ── 1. Core Static Pages ─────────────────────────────────────────────────────
 $core_pages = [
-    ['loc' => '/',                    'changefreq' => 'daily',   'priority' => '1.0'],
-    ['loc' => '/about',               'changefreq' => 'monthly', 'priority' => '0.8'],
-    ['loc' => '/contact',             'changefreq' => 'monthly', 'priority' => '0.8'],
-    ['loc' => '/privacy-policy',      'changefreq' => 'yearly',  'priority' => '0.3'],
-    ['loc' => '/termsofservices',     'changefreq' => 'yearly',  'priority' => '0.3'],
+    ['loc' => '/',                       'changefreq' => 'daily',   'priority' => '1.0'],
+    ['loc' => '/about',                  'changefreq' => 'monthly', 'priority' => '0.8'],
+    ['loc' => '/contact',               'changefreq' => 'monthly', 'priority' => '0.8'],
+    ['loc' => '/privacy-policy',        'changefreq' => 'yearly',  'priority' => '0.3'],
+    ['loc' => '/termsofservices',       'changefreq' => 'yearly',  'priority' => '0.3'],
+    ['loc' => '/cookie-policy',         'changefreq' => 'yearly',  'priority' => '0.3'],
+    ['loc' => '/terms-and-conditions',  'changefreq' => 'yearly',  'priority' => '0.3'],
 ];
 
 $today = date('Y-m-d');
@@ -63,9 +65,17 @@ foreach ($core_pages as $page) {
     echo "  </url>\n";
 }
 
-// ── 2. All Categories ────────────────────────────────────────────────────────
+// ── 2. Phase-1 Nav-Visible Categories (with ≥1 published post) ────────────────
+// Uses get_nav_categories_for_sitemap() — only nav_visible=1 cats with posts
 if ($db_conn) {
-    $cats_res = @mysqli_query($db_conn, "SELECT id, category, created_at FROM categories ORDER BY id ASC");
+    $cats_res = @mysqli_query($db_conn,
+        "SELECT c.id, c.category, c.created_at,
+                (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count
+         FROM categories c
+         WHERE c.nav_visible = 1
+         HAVING post_count > 0
+         ORDER BY c.id ASC"
+    );
     if ($cats_res) {
         while ($cat = mysqli_fetch_assoc($cats_res)) {
             $cat_url = $site_url . bk_category_url($cat['id'], $cat['category']);

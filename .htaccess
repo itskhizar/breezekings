@@ -70,6 +70,29 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # ── 410 Gone: Old WordPress paths (leftover from previous WP install) ──
+    RewriteRule ^wp-admin(/.*)?$ - [G,L]
+    RewriteRule ^wp-login\.php$ - [G,L]
+    RewriteRule ^wp-signup\.php$ - [G,L]
+    RewriteRule ^wp-register\.php$ - [G,L]
+    RewriteRule ^wp-content(/.*)?$ - [G,L]
+    RewriteRule ^wp-includes(/.*)?$ - [G,L]
+    RewriteRule ^wp-config\.php$ - [G,L]
+    RewriteRule ^xmlrpc\.php$ - [G,L]
+    RewriteRule ^typography(/.*)?$ - [G,L]
+    RewriteRule ^feed/$ - [G,L]
+
+    # ── 410 Gone: Removed categories (Education, Home Improvement, Travel) ──
+    RewriteCond %{QUERY_STRING} ^slug=education$ [NC]
+    RewriteRule ^category/.*$ - [G,L]
+    RewriteCond %{QUERY_STRING} ^slug=home[-_]?improvement$ [NC]
+    RewriteRule ^category/.*$ - [G,L]
+    RewriteCond %{QUERY_STRING} ^slug=travel$ [NC]
+    RewriteRule ^category/.*$ - [G,L]
+    RewriteRule ^category/[0-9]+/education/?$ - [G,L]
+    RewriteRule ^category/[0-9]+/home-improvement/?$ - [G,L]
+    RewriteRule ^category/[0-9]+/travel/?$ - [G,L]
+
     # 1. Redirect direct .php requests to extensionless URLs (301 Permanent SEO Redirect)
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteCond %{REQUEST_METHOD} !POST
@@ -104,3 +127,5 @@ Options -Indexes
 # Custom On-Brand 404 Error Document
 ErrorDocument 404 /404.php
 
+# 410 Gone — intentionally removed content
+ErrorDocument 410 /410.php
