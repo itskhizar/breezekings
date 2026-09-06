@@ -559,7 +559,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                                 class="w-6 h-6 rounded-full bg-navy-900 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
                                                 <?php echo strtoupper(substr($author_name, 0, 1)); ?>
                                             </div>
-                                            <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide"
+                                            <span class="text-[11px] text-slate-600 font-medium normal-case tracking-normal"
                                                 itemprop="author" itemscope itemtype="https://schema.org/Person">
                                                 <span itemprop="name"><?php echo $author_name; ?></span>
                                             </span>

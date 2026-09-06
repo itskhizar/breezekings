@@ -301,10 +301,16 @@ class Session
    function edit_admin($username, $name, $mobile_no, $email, $userlevel)
    {
       global $database;
+      $name = trim($name);
       $database->updateUserField($username, 'display_name', $name);
       $database->updateUserField($username, 'phone', $mobile_no);
       $database->updateUserField($username, 'email', $email);
       $database->updateUserField($username, 'userlevel', $userlevel);
+
+      // Immediately refresh logged-in session userinfo if updating self
+      if ($this->username === $username) {
+         $this->userinfo = $database->getUserInfo($username);
+      }
       return 0;
    }
 
@@ -322,11 +328,13 @@ class Session
    function change_accountdetails($username, $displayname, $email, $phone, $profile_image = null)
    {
       global $database, $form;
+      $displayname = trim($displayname);
       if (empty($displayname)) $form->setError("displayname", "* Display name is required");
       if (empty($email)) $form->setError("email", "* Email is required");
 
       if ($form->num_errors > 0) return 1;
 
+      // Preserve exact case combinations (uppercase, lowercase, mixed)
       $database->updateUserField($username, 'display_name', $displayname);
       $database->updateUserField($username, 'email', $email);
       $database->updateUserField($username, 'phone', $phone);
@@ -340,8 +348,10 @@ class Session
          }
       }
       
-      // Update session userinfo
-      $this->userinfo = $database->getUserInfo($username);
+      // Update session userinfo immediately
+      if ($this->username === $username) {
+         $this->userinfo = $database->getUserInfo($username);
+      }
       return 0;
    }
 

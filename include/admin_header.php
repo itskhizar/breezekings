@@ -29,7 +29,7 @@
                 <!-- User Profile -->
                 <div id="userMenuBtn" class="flex items-center gap-4 cursor-pointer">
                     <div class="text-right hidden sm:block">
-                        <p class="text-xs font-bold text-slate-800 leading-none mb-1"><?php echo htmlspecialchars($session->userinfo['display_name'] ?? $session->username); ?></p>
+                        <p class="text-xs font-bold text-slate-800 leading-none mb-1"><?php echo htmlspecialchars(!empty($session->userinfo['display_name']) ? $session->userinfo['display_name'] : $session->username); ?></p>
                         <span class="text-[10px] font-bold text-brand-blue uppercase tracking-widest"><?php echo ($session->userlevel == 4) ? 'Super Admin' : 'Admin'; ?></span>
                     </div>
                     <div class="relative group">

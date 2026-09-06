@@ -241,9 +241,14 @@ $cat_meta_desc  = htmlspecialchars(mb_substr(strip_tags($cat_intro), 0, 155));
                                 <img src="<?php echo $thumbnail; ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" itemprop="image" onerror="this.src='/images/blog-default.jpg'">
                             </a>
                             <div class="p-6 flex-1 flex flex-col">
-                                <div class="flex items-center gap-4 mb-3">
+                                <div class="flex items-center flex-wrap gap-2.5 mb-3">
                                     <span class="bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm"><?php echo strtoupper(htmlspecialchars($category_name)); ?></span>
                                     <span class="text-[11px] text-slate-500 font-medium"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></span>
+                                    <span class="text-[11px] text-slate-300">&bull;</span>
+                                    <span class="text-[11px] text-slate-600 font-medium normal-case flex items-center gap-1.5">
+                                        <i class="fa-regular fa-user text-[10px] text-slate-400"></i>
+                                        <?php echo htmlspecialchars($post['author_name'] ?? 'Admin'); ?>
+                                    </span>
                                 </div>
                                 <h3 class="text-xl font-serif font-bold text-navy-900 mb-3 leading-snug group-hover:text-crimson-600 transition-colors" itemprop="headline">
                                     <a href="<?php echo $post_url; ?>"><?php echo htmlspecialchars($post['title']); ?></a>

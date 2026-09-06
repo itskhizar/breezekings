@@ -78,7 +78,7 @@ if (!$session->logged_in) {
                             <span>BREEZEKINGS</span> <span class="text-slate-300">/</span> <span class="text-crimson-600 font-semibold">MANAGEMENT SUITE</span>
                         </div>
                         <h2 class="text-2xl lg:text-3xl font-extrabold text-[#0B1F3A] tracking-tight">
-                            Welcome back, <?php echo htmlspecialchars($session->userinfo['display_name'] ?? $session->username); ?> <span class="text-xl">👋</span>
+                            Welcome back, <?php echo htmlspecialchars(!empty($session->userinfo['display_name']) ? $session->userinfo['display_name'] : $session->username); ?> <span class="text-xl">👋</span>
                         </h2>
                         <p class="text-xs lg:text-sm text-slate-500 mt-0.5">Platform overview, article performance and content pipeline status.</p>
                     </div>

@@ -482,9 +482,10 @@ $_more_cats = array_slice($_all_cats, 5);
             <!-- Auth / User -->
             <?php if ($session->logged_in && $session->username != GUEST_NAME): ?>
                 <div class="bk-user-chip">
+                    <?php $user_chip_name = !empty($session->userinfo['display_name']) ? $session->userinfo['display_name'] : $session->username; ?>
                     <a href="/dashboard" class="flex items-center gap-2" title="Go to Dashboard">
-                        <img src="<?= bk_avatar_url($session->userinfo['profile_image'] ?? null, $session->userinfo['display_name'] ?? $session->username) ?>" alt="Profile" class="bk-user-avatar" onerror="this.src='/images/avatar.png'">
-                        <span class="text-xs text-white font-bold hidden xl:inline"><?= htmlspecialchars($session->userinfo['display_name'] ?? $session->username) ?></span>
+                        <img src="<?= bk_avatar_url($session->userinfo['profile_image'] ?? null, $user_chip_name) ?>" alt="Profile" class="bk-user-avatar" onerror="this.src='/images/avatar.png'">
+                        <span class="text-xs text-white font-bold hidden xl:inline normal-case"><?= htmlspecialchars($user_chip_name) ?></span>
                     </a>
                 </div>
             <?php else: ?>

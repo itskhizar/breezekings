@@ -102,10 +102,8 @@ class Process
    {
       global $session, $form;
 
-      if (ALL_LOWERCASE) {
-         $_POST['name'] = strtolower($_POST['name']);
-      }
-      $retval = $session->addadmin($_POST['name'], $_POST['mobile_no'], $_POST['email'], $_POST['userlevel'] ?? 1);
+      $name = trim($_POST['name'] ?? '');
+      $retval = $session->addadmin($name, $_POST['mobile_no'] ?? '', $_POST['email'] ?? '', $_POST['userlevel'] ?? 1);
 
       if ($retval == 0) {
          header("Location: admin-users.php?msg=success");
@@ -121,7 +119,8 @@ class Process
    function proedit_admin()
    {
       global $session, $form;
-      $retval = $session->edit_admin($_POST['username'], $_POST['name'], $_POST['mobile_no'], $_POST['email'], $_POST['userlevel']);
+      $name = trim($_POST['name'] ?? '');
+      $retval = $session->edit_admin($_POST['username'] ?? '', $name, $_POST['mobile_no'] ?? '', $_POST['email'] ?? '', $_POST['userlevel'] ?? 1);
 
       if ($retval == 0) {
          header("Location: admin-users.php?msg=success");
@@ -238,7 +237,11 @@ class Process
    {
       global $session, $form;
 
-      $retval = $session->change_accountdetails($_POST['username'], $_POST['displayname'], $_POST['email'], $_POST['phone'], $_FILES['profile_image'] ?? null);
+      $displayname = trim($_POST['displayname'] ?? '');
+      $email = trim($_POST['email'] ?? '');
+      $phone = trim($_POST['phone'] ?? '');
+
+      $retval = $session->change_accountdetails($_POST['username'] ?? '', $displayname, $email, $phone, $_FILES['profile_image'] ?? null);
 
       if ($retval == 0) {
          header("Location: settings.php?msg=success");

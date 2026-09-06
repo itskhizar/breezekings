@@ -11,7 +11,7 @@ if (!empty($_GET['id']) && is_numeric($_GET['id'])) {
     $post_id = bk_decode_id($_GET['id']);
 }
 
-$post_query = $database->query("SELECT p.*, c.category FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = $post_id");
+$post_query = $database->query("SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) WHERE p.id = $post_id");
 $post = mysqli_fetch_assoc($post_query);
 
 if (!$post || $post['status'] !== 'Published') {
@@ -38,7 +38,7 @@ $search_q = isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '';
 $database->increment_views($post_id);
 
 $author_info = $database->getUserInfo($post['author']);
-$author_name = $author_info['display_name'] ?? $post['author'] ?? 'Breezekings Editorial';
+$author_name = !empty($post['author_name']) ? $post['author_name'] : (!empty($author_info['display_name']) ? $author_info['display_name'] : (!empty($author_info['username']) ? $author_info['username'] : 'Admin'));
 $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name);
 ?>
 <!DOCTYPE html>
@@ -318,7 +318,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                 <div class="flex items-center gap-4 text-xs font-medium uppercase tracking-wider text-slate-300">
                     <div class="flex items-center gap-3">
                         <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-8 h-8 rounded-full border-2 border-slate-400 object-cover" onerror="this.src='/images/avatar.png'">
-                        <span class="text-white"><?php echo htmlspecialchars($author_name); ?></span>
+                        <span class="text-white normal-case font-semibold"><?php echo htmlspecialchars($author_name); ?></span>
                     </div>
                     <span>&bull;</span>
                     <span><?php echo date('F d, Y', strtotime($post['created_at'])); ?></span>

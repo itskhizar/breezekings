@@ -152,8 +152,8 @@ if (!$session->logged_in) {
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-500 mb-2">Display Name <span class="text-slate-400 font-normal normal-case">(shown on articles & author bylines)</span></label>
-                                        <input type="text" name="displayname" class="w-full bg-white border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors" value="<?php echo htmlspecialchars($session->userinfo['display_name'] ?? ''); ?>" placeholder="Your full name">
-                                        <p class="text-[11px] text-slate-400 mt-1.5">This name appears publicly on all articles you publish.</p>
+                                        <input type="text" name="displayname" class="w-full bg-white border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors" value="<?php echo htmlspecialchars(!empty($session->userinfo['display_name']) ? $session->userinfo['display_name'] : $session->username); ?>" placeholder="e.g. John Doe, SarahConnor, Dr. Smith">
+                                        <p class="text-[11px] text-slate-400 mt-1.5">Supports any combination of uppercase, lowercase letters, numbers & spaces. Appears publicly on all articles you publish.</p>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-500 mb-2">Email Address</label>

@@ -205,7 +205,8 @@ if ($session->userlevel < 4) {
                                 $result = $database->get_all_users();
                                 if ($result && mysqli_num_rows($result) > 0) {
                                     while ($row = mysqli_fetch_assoc($result)) {
-                                        $initials = strtoupper(substr($row['display_name'] ?? $row['username'], 0, 2));
+                                        $user_display = !empty($row['display_name']) ? $row['display_name'] : $row['username'];
+                                        $initials = strtoupper(substr($user_display, 0, 2));
                                         $role = ($row['userlevel'] == 4) ? 'Super Admin' : 'Admin';
                                         $role_class = ($row['userlevel'] == 4) ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600';
                                         $is_you = ($row['username'] == $session->username) ? '<span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">YOU</span>' : '';
@@ -217,7 +218,7 @@ if ($session->userlevel < 4) {
                                                 <?php echo $initials; ?>
                                             </div>
                                             <div>
-                                                <p class="font-bold text-slate-800 flex items-center gap-2"><?php echo htmlspecialchars($row['display_name'] ?? $row['username']); ?> <?php echo $is_you; ?></p>
+                                                <p class="font-bold text-slate-800 flex items-center gap-2"><?php echo htmlspecialchars($user_display); ?> <?php echo $is_you; ?></p>
                                                 <p class="text-xs text-slate-500"><?php echo htmlspecialchars($row['email']); ?></p>
                                                 <p class="text-[9px] text-brand-blue font-bold font-mono mt-0.5"><?php echo htmlspecialchars($row['registration_no']); ?></p>
                                             </div>
@@ -350,8 +351,9 @@ if ($session->userlevel < 4) {
                     <form action="process.php" method="POST">
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
-                                <input type="text" name="name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors" placeholder="e.g. John Doe">
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Display Name / Full Name</label>
+                                <input type="text" name="name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors" placeholder="e.g. John Doe, SarahConnor, Dr. Smith">
+                                <p class="text-[11px] text-slate-400 mt-1">Accepts any combination of uppercase, lowercase letters, numbers & spaces.</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">Mobile Number</label>
@@ -398,8 +400,9 @@ if ($session->userlevel < 4) {
                         <input type="hidden" name="username" id="edit_username">
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Display Name / Full Name</label>
                                 <input type="text" name="name" id="edit_name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors">
+                                <p class="text-[11px] text-slate-400 mt-1">Accepts any combination of uppercase, lowercase letters, numbers & spaces.</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">Mobile Number</label>

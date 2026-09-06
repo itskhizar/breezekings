@@ -128,8 +128,11 @@ class MySQLDB
          }
       }
 
-      // One-time migration: populate display_name only when it is NULL/empty (never overwrite user-set names)
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = username WHERE (`display_name` IS NULL OR `display_name` = '' OR `display_name` = 'Admin')");
+      // Migration: clean up legacy lowercase names and ensure display_name preserves user casing
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Admin' WHERE `username` = 'admin' AND (`display_name` = 'admin' OR `display_name` IS NULL OR `display_name` = '')");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `username` = 'khizar.ahmad' AND (`display_name` = 'khizar.ahmad' OR `display_name` IS NULL OR `display_name` = '')");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Waseem Azam' WHERE `username` = 'azam.waseem' AND (`display_name` = 'azam.waseem' OR `display_name` IS NULL OR `display_name` = '')");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = CONCAT(UPPER(SUBSTRING(REPLACE(username, '.', ' '), 1, 1)), SUBSTRING(REPLACE(username, '.', ' '), 2)) WHERE (`display_name` IS NULL OR `display_name` = '')");
    }
 
    function generateExcerpt($content, $length = 160)
@@ -229,9 +232,9 @@ class MySQLDB
    function get_post($id)
    {
       $id = (int)$id;
-      $q = "SELECT p.*, c.category, u.display_name as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON p.author = u.registration_no 
+            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.id = $id AND p.is_deleted = 0";
       $res = mysqli_query($this->connection, $q);
       if ($res && mysqli_num_rows($res) > 0) {
@@ -242,9 +245,9 @@ class MySQLDB
 
    function get_all_posts($status = NULL)
    {
-      $q = "SELECT p.*, c.category, u.display_name as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON p.author = u.registration_no
+            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE p.is_deleted = 0";
 
       if (!empty($status)) {
@@ -264,9 +267,9 @@ class MySQLDB
          $status = mysqli_real_escape_string($this->connection, $status);
          $status_sql = " AND p.status = '$status'";
       }
-      $q = "SELECT p.*, c.category, u.display_name as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON p.author = u.registration_no
+            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE p.category_id = $cat_id AND p.is_deleted = 0 $status_sql
             ORDER BY p.created_at DESC";
       return mysqli_query($this->connection, $q);
@@ -280,9 +283,9 @@ class MySQLDB
          $status_esc = mysqli_real_escape_string($this->connection, $status);
          $status_sql = " AND p.status = '$status_esc'";
       }
-      $q = "SELECT p.*, c.category, u.display_name as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON p.author = u.registration_no
+            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE (p.title LIKE '%$query%' OR p.content LIKE '%$query%' OR p.tags LIKE '%$query%' OR p.slug LIKE '%$query%') 
             $status_sql AND p.is_deleted = 0
             ORDER BY p.created_at DESC";
@@ -292,8 +295,9 @@ class MySQLDB
    function get_popular_posts($limit = 5)
    {
       $limit = (int) $limit;
-      $q = "SELECT p.*, c.category FROM posts p 
+      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.status = 'Published' AND p.is_deleted = 0
             ORDER BY p.views DESC, p.created_at DESC LIMIT $limit";
       return mysqli_query($this->connection, $q);
@@ -304,8 +308,9 @@ class MySQLDB
       $category_id = (int) $category_id;
       $exclude_id = (int) $exclude_id;
       $limit = (int) $limit;
-      $q = "SELECT p.*, c.category FROM posts p 
+      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.category_id = $category_id AND p.id != $exclude_id 
             AND p.status = 'Published' AND p.is_deleted = 0
             ORDER BY p.created_at DESC LIMIT $limit";
@@ -380,10 +385,10 @@ class MySQLDB
       return mysqli_fetch_array($result);
    }
 
-   function getUserInfo($username)
+   function getUserInfo($identifier)
    {
-      $username = mysqli_real_escape_string($this->connection, $username);
-      $q = "SELECT * FROM users WHERE username = '$username'";
+      $identifier = mysqli_real_escape_string($this->connection, $identifier);
+      $q = "SELECT * FROM users WHERE username = '$identifier' OR registration_no = '$identifier' LIMIT 1";
       $result = mysqli_query($this->connection, $q);
       if (!$result || (mysqli_num_rows($result) < 1))
          return NULL;
@@ -422,11 +427,15 @@ class MySQLDB
 
    function addadmin($name, $mobile_no, $email, $level = 1)
    {
-      $name = mysqli_real_escape_string($this->connection, $name);
+      $name = trim($name);
+      $name_esc = mysqli_real_escape_string($this->connection, $name);
       $mobile_no = mysqli_real_escape_string($this->connection, $mobile_no);
       $email = mysqli_real_escape_string($this->connection, $email);
 
+      // Username is generated for login, but display_name preserves exact case (uppercase, lowercase, mixed combinations)
       $base_username = strtolower(str_replace(' ', '.', $name));
+      $base_username = preg_replace('/[^a-z0-9.]/', '', $base_username);
+      if (empty($base_username)) $base_username = 'user';
       $username = $base_username;
       $count = 1;
       while (true) {
@@ -451,7 +460,7 @@ class MySQLDB
       $userid = md5($username . time());
 
       $q = "INSERT INTO users (username, password, userid, userlevel, email, timestamp, registration_no, display_name, phone) 
-            VALUES ('$username', '$password', '$userid', '$level', '$email', " . time() . ", '$registration_no', '$name', '$mobile_no')";
+            VALUES ('$username', '$password', '$userid', '$level', '$email', " . time() . ", '$registration_no', '$name_esc', '$mobile_no')";
       return mysqli_query($this->connection, $q);
    }
 
