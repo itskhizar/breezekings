@@ -45,12 +45,12 @@
                     <i class="fa-solid fa-pen-nib text-slate-400 w-5"></i> Write New Post
                 </a>
             </li>
-            <?php if($session->userlevel >= 4): ?>
             <li>
                 <a href="admin-categories.php" class="sidebar-link <?php echo (basename($_SERVER['PHP_SELF']) == 'admin-categories.php') ? 'active' : 'text-slate-300'; ?> flex items-center gap-3 px-6 py-3 text-sm font-medium">
                     <i class="fa-solid fa-tags text-slate-400 w-5"></i> Categories
                 </a>
             </li>
+            <?php if($session->userlevel >= 4): ?>
             <li>
                 <a href="admin-users.php" class="sidebar-link <?php echo (basename($_SERVER['PHP_SELF']) == 'admin-users.php') ? 'active' : 'text-slate-300'; ?> flex items-center gap-3 px-6 py-3 text-sm font-medium">
                     <i class="fa-solid fa-users-gear text-slate-400 w-5"></i> Admin Users

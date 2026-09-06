@@ -219,7 +219,7 @@ class Session
          'content' => $data['content'],
          'excerpt' => $data['excerpt'],
          'category_id' => $data['category_id'],
-         'author' => $this->userinfo['registration_no'],
+         'author' => !empty($this->userinfo['registration_no']) ? $this->userinfo['registration_no'] : $this->username,
          'status' => $status,
          'featured_image' => $featured_image,
          'meta_title' => $data['meta_title'],
@@ -238,8 +238,9 @@ class Session
       $post = mysqli_fetch_assoc($database->query("SELECT author FROM posts WHERE id = $id"));
       if (!$post) return 2;
       
-      // Permission Check: Super Admin (4+) or Author can edit
-      if ($this->userlevel < 4 && $post['author'] != $this->userinfo['registration_no']) {
+      // Permission Check: Admin (userlevel >= 1) or Author can edit
+      $is_author = ($post['author'] == ($this->userinfo['registration_no'] ?? '') || $post['author'] == $this->username);
+      if ($this->userlevel < 1 && !$is_author) {
          return 2;
       }
 
@@ -319,7 +320,8 @@ class Session
       $id = (int)$id;
       $post = mysqli_fetch_assoc($database->query("SELECT author FROM posts WHERE id = $id"));
       if (!$post) return false;
-      if ($this->userlevel < 4 && $post['author'] != $this->userinfo['registration_no']) return false;
+      $is_author = ($post['author'] == ($this->userinfo['registration_no'] ?? '') || $post['author'] == $this->username);
+      if ($this->userlevel < 1 && !$is_author) return false;
       return $database->delete_post($id); 
    }
    function delete_category($id) { global $database; return $database->delete_category($id); }

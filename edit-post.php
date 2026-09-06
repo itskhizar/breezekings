@@ -14,8 +14,9 @@ if (!$post) {
     exit();
 }
 
-// Permission Check: Super Admin (4+) or Author can edit
-if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registration_no']) {
+// Permission Check: Admin (userlevel >= 1) or Author can edit
+$is_author = ($post['author'] == ($session->userinfo['registration_no'] ?? '') || $post['author'] == $session->username);
+if ($session->userlevel < 1 && !$is_author) {
     header("Location: posts.php?msg=error");
     exit();
 }
@@ -42,6 +43,20 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                             sidebar: '#151928',
                             blue: '#0d6efd',
                             hover: '#0b5ed7',
+                        },
+                        navy: {
+                            50: '#eef0f7',
+                            800: '#1e2336',
+                            900: '#0B1F3A',
+                            950: '#071324',
+                        },
+                        crimson: {
+                            50: '#fff0f1',
+                            100: '#ffe1e3',
+                            200: '#ffc7ca',
+                            500: '#e12b38',
+                            600: '#C5202B',
+                            700: '#a31a23',
                         }
                     }
                 }
@@ -380,10 +395,10 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
 
     <!-- Link Modal for Guest Posting / Articles -->
     <div id="linkModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-crimson-50 text-crimson-600 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-red-50 text-[#C5202B] flex items-center justify-center">
                         <i class="fa-solid fa-link text-sm"></i>
                     </div>
                     <div>
@@ -391,23 +406,23 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                         <p class="text-[11px] text-slate-500">Configure anchor text &amp; guest post link attributes</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeLinkModal()" class="w-7 h-7 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+                <button type="button" onclick="closeLinkModal()" class="w-7 h-7 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <form id="linkModalForm" onsubmit="applyLinkModal(event)" class="p-5 space-y-4">
+            <form id="linkModalForm" onsubmit="applyLinkModal(event)" class="p-5 space-y-4 overflow-y-auto flex-1">
                 <!-- Target URL -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Destination URL <span class="text-red-500">*</span></label>
-                    <input type="text" id="linkUrlInput" required placeholder="https://example.com/target-page" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-crimson-500 focus:bg-white transition-all font-mono">
+                    <input type="text" id="linkUrlInput" required placeholder="https://example.com/target-page" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-red-500 focus:bg-white transition-all font-mono">
                     <p class="text-[10px] text-slate-400 mt-1">Accepts full URLs (https://...), relative links (/about), or anchor targets (#section)</p>
                 </div>
 
                 <!-- Anchor / Link Text -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Anchor Text (Display Text)</label>
-                    <input type="text" id="linkTextInput" placeholder="Click here or target keyword" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-crimson-500 focus:bg-white transition-all">
+                    <input type="text" id="linkTextInput" placeholder="Click here or target keyword" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-red-500 focus:bg-white transition-all">
                 </div>
 
                 <!-- SEO / Rel Type (Essential for Guest Posting) -->
@@ -416,7 +431,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                         Link Type &amp; Rel Attribute 
                         <span class="text-[10px] font-normal text-slate-400">(Guest Posting / SEO)</span>
                     </label>
-                    <select id="linkRelInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-crimson-500 focus:bg-white font-medium">
+                    <select id="linkRelInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-red-500 focus:bg-white font-medium">
                         <option value="dofollow">Standard / Dofollow (Editorial link)</option>
                         <option value="nofollow">rel="nofollow" (Standard Nofollow)</option>
                         <option value="sponsored">rel="sponsored" (Paid Guest Post / Sponsored)</option>
@@ -430,20 +445,20 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                     <span class="text-xs text-slate-700 font-medium">Open link in new tab</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="linkTargetBlank" checked class="sr-only peer">
-                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-crimson-600"></div>
+                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#C5202B]"></div>
                     </label>
                 </div>
 
-                <!-- Actions -->
-                <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-100">
-                    <button type="button" id="linkModalUnlinkBtn" onclick="removeModalLink()" class="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1.5 rounded hover:bg-red-50 transition-colors hidden items-center gap-1">
+                <!-- Actions (Always visible at bottom) -->
+                <div class="pt-3 flex items-center justify-between gap-2 border-t border-slate-100 mt-3">
+                    <button type="button" id="linkModalUnlinkBtn" onclick="removeModalLink()" class="text-red-600 hover:text-red-800 text-xs font-semibold px-2.5 py-2 rounded-lg hover:bg-red-50 transition-colors hidden items-center gap-1 cursor-pointer">
                         <i class="fa-solid fa-link-slash"></i> Remove Link
                     </button>
-                    <div class="flex items-center gap-2 ml-auto">
-                        <button type="button" onclick="closeLinkModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                    <div class="flex items-center gap-2.5 ml-auto">
+                        <button type="button" onclick="closeLinkModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 cursor-pointer">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-crimson-600 hover:bg-crimson-700 rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+                        <button type="submit" id="linkModalSaveBtn" style="background-color: #C5202B !important; color: #ffffff !important; display: inline-flex !important; visibility: visible !important;" class="px-4 py-2 text-xs font-bold text-white bg-[#C5202B] hover:bg-[#a31a23] rounded-lg transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer">
                             <i class="fa-solid fa-check"></i> Save Link
                         </button>
                     </div>

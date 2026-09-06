@@ -5,7 +5,7 @@ if (!$session->logged_in) {
     header("Location: login.php");
     exit();
 }
-if ($session->userlevel < 4) {
+if ($session->userlevel < 1) {
     header("Location: dashboard.php");
     exit();
 }

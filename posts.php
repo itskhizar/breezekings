@@ -301,7 +301,10 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                             </a>
                                             <?php endif; ?>
                                             
-                                            <?php if ($session->userlevel >= 4 || $row['author'] == $session->userinfo['registration_no']): ?>
+                                            <?php 
+                                            $can_manage_post = ($session->userlevel >= 1 || $row['author'] == ($session->userinfo['registration_no'] ?? '') || $row['author'] == $session->username);
+                                            if ($can_manage_post): 
+                                            ?>
                                             <a href="edit-post.php?id=<?php echo $row['id']; ?>" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#0B1F3A] hover:text-white flex items-center justify-center transition-all shadow-sm" title="Edit Article">
                                                 <i class="fa-solid fa-pen text-xs"></i>
                                             </a>
