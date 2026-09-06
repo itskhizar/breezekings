@@ -14,6 +14,8 @@ class MySQLDB
       $this->connection = mysqli_connect(DB_SERVER, DB_USER, DB_PASS, DB_NAME) or die('Connect Error (' . mysqli_connect_errno() . ') ' . mysqli_connect_error());
 
       mysqli_set_charset($this->connection, "utf8mb4");
+      @mysqli_query($this->connection, "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
+      @mysqli_query($this->connection, "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
       $this->num_members = -1;
 
@@ -202,6 +204,20 @@ class MySQLDB
             WHERE `id` = $id";
 
       return mysqli_query($this->connection, $q);
+   }
+
+   function get_post($id)
+   {
+      $id = (int)$id;
+      $q = "SELECT p.*, c.category, u.display_name as author_name FROM posts p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            LEFT JOIN users u ON p.author = u.registration_no 
+            WHERE p.id = $id AND p.is_deleted = 0";
+      $res = mysqli_query($this->connection, $q);
+      if ($res && mysqli_num_rows($res) > 0) {
+         return mysqli_fetch_assoc($res);
+      }
+      return null;
    }
 
    function get_all_posts($status = NULL)

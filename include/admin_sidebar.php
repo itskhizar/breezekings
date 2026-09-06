@@ -3,8 +3,13 @@
     <style>
         .sidebar-link { transition: all 0.2s ease; border-left: 3px solid transparent; }
         .sidebar-link:hover { background-color: rgba(255, 255, 255, 0.06); color: #ffffff; }
-        .sidebar-link.active { background: linear-gradient(to right, rgba(197, 32, 43, 0.2), transparent); border-left: 3px solid #C5202B; color: #ffffff; }
-        .sidebar-link.active i { color: #f2616d !important; }
+        .sidebar-link.active { 
+            background: linear-gradient(to right, rgba(197, 32, 43, 0.28), rgba(197, 32, 43, 0.04)) !important; 
+            border-left: 4px solid #C5202B !important; 
+            color: #ffffff !important; 
+            font-weight: 600 !important; 
+        }
+        .sidebar-link.active i { color: #f87171 !important; }
     </style>
     
     <!-- Logo Area -->
@@ -31,7 +36,7 @@
                 </a>
             </li>
             <li>
-                <a href="posts.php" class="sidebar-link <?php echo (basename($_SERVER['PHP_SELF']) == 'posts.php' || basename($_SERVER['PHP_SELF']) == 'create-post.php' || basename($_SERVER['PHP_SELF']) == 'edit-post.php') ? 'active' : 'text-slate-300'; ?> flex items-center gap-3 px-6 py-3 text-sm font-medium">
+                <a href="posts.php" class="sidebar-link <?php echo (in_array(basename($_SERVER['PHP_SELF']), ['posts.php', 'edit-post.php'])) ? 'active' : 'text-slate-300'; ?> flex items-center gap-3 px-6 py-3 text-sm font-medium">
                     <i class="fa-solid fa-file-lines text-slate-400 w-5"></i> Blog Posts
                 </a>
             </li>

@@ -1,14 +1,25 @@
 <?php
 
-define("DB_SERVER", "localhost");
-define("DB_USER", "huntcqrp_breezekings");
-define("DB_PASS", "breezekings0920");
-define("DB_NAME", "huntcqrp_breezekings");
+$is_local = (
+    php_sapi_name() === 'cli' && (DIRECTORY_SEPARATOR === '\\' || !file_exists('/home/huntcqrp'))
+) || (
+    isset($_SERVER['HTTP_HOST']) && (
+        strpos($_SERVER['HTTP_HOST'], 'localhost') !== false || 
+        strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false
+    )
+);
 
-// define("DB_SERVER", "localhost");
-// define("DB_USER", "root");
-// define("DB_PASS", "");
-// define("DB_NAME", "blogging");
+if ($is_local) {
+    define("DB_SERVER", "localhost");
+    define("DB_USER", "root");
+    define("DB_PASS", "");
+    define("DB_NAME", "blogging");
+} else {
+    define("DB_SERVER", "localhost");
+    define("DB_USER", "huntcqrp_breezekings");
+    define("DB_PASS", "breezekings0920");
+    define("DB_NAME", "huntcqrp_breezekings");
+}
 
 
 // define("DB_SERVER", "localhost");

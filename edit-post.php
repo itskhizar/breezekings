@@ -95,7 +95,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                         <h2 class="text-2xl font-bold text-slate-900">Edit Post</h2>
                     </div>
                     <div class="mt-4 md:mt-0 flex gap-3">
-                        <button type="button" onclick="document.getElementById('postForm').submit();" class="bg-brand-blue hover:bg-brand-hover text-white font-semibold py-2.5 px-5 rounded shadow-sm transition-colors text-sm flex items-center gap-2">
+                        <button type="button" onclick="submitPost()" class="bg-brand-blue hover:bg-brand-hover text-white font-semibold py-2.5 px-5 rounded shadow-sm transition-colors text-sm flex items-center gap-2">
                             <i class="fa-solid fa-save"></i> Update Post
                         </button>
                     </div>
@@ -296,17 +296,21 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
     </div>
 
     <script>
-        function generateSlug() {
-            const text = document.getElementById('postTitle').value;
-            const slug = text.toString().toLowerCase()
-                .replace(/\s+/g, '-')
-                .replace(/[^\w\-]+/g, '')
-                .replace(/\-\-+/g, '-')
-                .replace(/^-+/, '')
-                .replace(/-+$/, '');
-            document.getElementById('postSlug').value = slug;
+        // â”€â”€ Helper: capture editor â†’ submit form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        function submitPost() {
+            document.getElementById('postContent').value = document.getElementById('editor').innerHTML;
+            document.getElementById('postForm').submit();
         }
 
+        // â”€â”€ Ctrl+S keyboard shortcut â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                submitPost();
+            }
+        });
+
+        // â”€â”€ Image Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function previewImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -314,16 +318,16 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                     const preview = document.getElementById('imagePreview');
                     preview.querySelector('img').src = e.target.result;
                     preview.classList.remove('hidden');
-                }
+                };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // Tag System
+        // â”€â”€ Tag System â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const tagContainer = document.getElementById('tagContainer');
-        const tagInput = document.getElementById('tagInput');
-        const hiddenTags = document.getElementById('hiddenTags');
-        let tags = hiddenTags.value ? hiddenTags.value.split(',').filter(t => t.trim() !== '') : [];
+        const tagInput     = document.getElementById('tagInput');
+        const hiddenTags   = document.getElementById('hiddenTags');
+        let tags = hiddenTags && hiddenTags.value ? hiddenTags.value.split(',').filter(t => t.trim() !== '') : [];
 
         function updateTags() {
             const tagElements = tags.map((tag, index) => `
@@ -332,11 +336,8 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                     <button type="button" onclick="removeTag(${index})" class="hover:text-brand-hover"><i class="fa-solid fa-xmark"></i></button>
                 </span>
             `).join('');
-            
             tagContainer.innerHTML = tagElements;
             tagContainer.appendChild(tagInput);
-            tagInput.focus();
-            
             hiddenTags.value = tags.join(',');
         }
 
@@ -345,70 +346,68 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             updateTags();
         }
 
-        tagInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                const tag = this.value.trim().replace(/,/g, '');
-                if (tag && !tags.includes(tag)) {
-                    tags.push(tag);
-                    this.value = '';
+        if (tagInput) {
+            tagInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const tag = this.value.trim().replace(/,/g, '');
+                    if (tag && !tags.includes(tag)) {
+                        tags.push(tag);
+                        this.value = '';
+                        updateTags();
+                    }
+                } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
+                    tags.pop();
                     updateTags();
                 }
-            } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
-                tags.pop();
-                updateTags();
-            }
-        });
+            });
+        }
 
-        // Initialize tags
         updateTags();
 
-        // Word Count and SEO Warning
-        const editor = document.getElementById('editor');
-        const wordCountDisplay = document.getElementById('wordCount');
+        // â”€â”€ Word Count & SEO Warning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        const editor             = document.getElementById('editor');
+        const wordCountDisplay   = document.getElementById('wordCount');
         const readingTimeDisplay = document.getElementById('readingTime');
-        const seoWarning = document.getElementById('seoWarning');
+        const seoWarning         = document.getElementById('seoWarning');
 
         function updateWordCount() {
-            const text = editor.innerText || editor.textContent;
-            const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-            wordCountDisplay.innerText = words;
-            
-            // Reading Time logic: 200 words per minute
-            readingTimeDisplay.innerText = Math.ceil(words / 200);
+            const text  = editor.innerText || editor.textContent || '';
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            wordCountDisplay.innerText   = words;
+            readingTimeDisplay.innerText = Math.max(1, Math.ceil(words / 200));
 
             if (words === 0) {
                 seoWarning.style.opacity = '0';
             } else if (words < 300) {
-                seoWarning.innerText = "Content is too short for SEO (Min: 300 words)";
-                seoWarning.className = "text-amber-500 font-medium ml-4 transition-all opacity-100";
+                seoWarning.innerText   = 'âš  Too short for SEO (min 300 words)';
+                seoWarning.className   = 'text-amber-500 font-medium transition-all';
                 seoWarning.style.opacity = '1';
-            } else if (words >= 300 && words < 800) {
-                seoWarning.innerText = "Good start, but 800+ is better for SEO";
-                seoWarning.className = "text-blue-500 font-medium ml-4 transition-all opacity-100";
+            } else if (words < 800) {
+                seoWarning.innerText   = 'âœ“ Good â€” 800+ words is even better';
+                seoWarning.className   = 'text-blue-500 font-medium transition-all';
                 seoWarning.style.opacity = '1';
             } else {
-                seoWarning.innerText = "Excellent length for SEO!";
-                seoWarning.className = "text-emerald-500 font-medium ml-4 transition-all opacity-100";
+                seoWarning.innerText   = 'âœ“ Excellent length for SEO!';
+                seoWarning.className   = 'text-emerald-500 font-medium transition-all';
                 seoWarning.style.opacity = '1';
             }
         }
 
         editor.addEventListener('input', updateWordCount);
-        // Initialize on load
         updateWordCount();
 
-        // ── Slug generation with special character handling ─────────────
+        // â”€â”€ Slug generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const postTitle = document.getElementById('postTitle');
-        const postSlug = document.getElementById('postSlug');
+        const postSlug  = document.getElementById('postSlug');
 
         function slugify(text) {
             return text.toString().toLowerCase().trim()
                 .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '') // remove accent symbols
-                .replace(/[^a-z0-9\s-]/g, '') // strip special characters, quotes, ampersands
-                .replace(/[\s-]+/g, '-') // collapse whitespace and duplicate hyphens
-                .replace(/^-+|-+$/g, ''); // trim hyphens
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/[\s-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
         }
 
         function generateSlug() {
@@ -418,47 +417,39 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             }
         }
 
-        // Validation for Draft fallback
-        const postForm = document.getElementById('postForm');
-        const postStatus = document.getElementById('postStatus');
-        const statusNote = document.getElementById('statusNote');
-        const thumbInput = document.getElementById('thumbInput');
-        const postTitle = document.getElementById('postTitle');
+        // â”€â”€ Validation / Draft Fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        const postForm       = document.getElementById('postForm');
+        const postStatus     = document.getElementById('postStatus');
+        const statusNote     = document.getElementById('statusNote');
+        const thumbInput     = document.getElementById('thumbInput');
         const categorySelect = document.querySelector('select[name="category_id"]');
         const hasExistingImage = <?php echo ($post['featured_image']) ? 'true' : 'false'; ?>;
 
         function checkMandatoryFields() {
-            const hasTitle = postTitle.value.trim() !== "";
-            const hasCategory = categorySelect.value !== "";
-            const hasContent = editor.innerText.trim() !== "";
-            const hasImage = hasExistingImage || thumbInput.files.length > 0;
+            const hasTitle    = postTitle && postTitle.value.trim() !== '';
+            const hasCategory = categorySelect && categorySelect.value !== '';
+            const hasContent  = editor.innerText.trim() !== '';
+            const hasImage    = hasExistingImage || (thumbInput && thumbInput.files.length > 0);
 
-            if (!hasTitle || !hasCategory || !hasContent || !hasImage) {
-                if (postStatus.value === 'Published') {
-                    statusNote.classList.remove('hidden');
-                } else {
-                    statusNote.classList.add('hidden');
-                }
-                return false;
+            if ((!hasTitle || !hasCategory || !hasContent || !hasImage) && postStatus && postStatus.value === 'Published') {
+                if (statusNote) statusNote.classList.remove('hidden');
             } else {
-                statusNote.classList.add('hidden');
-                return true;
+                if (statusNote) statusNote.classList.add('hidden');
             }
         }
 
         [postTitle, categorySelect, thumbInput].forEach(el => {
+            if (!el) return;
             el.addEventListener('change', checkMandatoryFields);
-            el.addEventListener('input', checkMandatoryFields);
+            el.addEventListener('input',  checkMandatoryFields);
         });
         editor.addEventListener('input', checkMandatoryFields);
-        postStatus.addEventListener('change', checkMandatoryFields);
+        if (postStatus) postStatus.addEventListener('change', checkMandatoryFields);
 
-        postForm.addEventListener('submit', function(e) {
+        document.getElementById('postForm').addEventListener('submit', function() {
             document.getElementById('postContent').value = editor.innerHTML;
-            // No need to stop submission, server side handles force Draft
         });
-        
-        // Initial check
+
         checkMandatoryFields();
     </script>
 

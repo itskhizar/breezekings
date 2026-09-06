@@ -162,31 +162,34 @@ class Process
     function proadd_comment()
     {
        global $database;
-       
-       // Bot Protection Check
-       if (!empty($_POST['hp_field'])) {
-          // It's a bot
-          header("Location: index.php");
-          exit;
-       }
+              // Bot Protection Check
+        if (!empty($_POST['hp_field'])) {
+           header("Location: /");
+           exit;
+        }
 
-       $submit_time = time();
-       $form_time = isset($_POST['form_time']) ? (int)$_POST['form_time'] : 0;
-       
-       if ($submit_time - $form_time < 3) {
-          // Too fast, likely a bot
-          header("Location: single.php?id=" . $_POST['post_id'] . "&msg=c_error#comments");
-          exit;
-       }
+        $post_id = isset($_POST['post_id']) ? (int)$_POST['post_id'] : 0;
+        $post = $database->get_post($post_id);
+        $redirect_base = $post ? bk_post_url($post) : '/';
 
-       $retval = $database->add_comment($_POST['post_id'], $_POST['name'], $_POST['email'], $_POST['comment']);
+        $submit_time = time();
+        $form_time = isset($_POST['form_time']) ? (int)$_POST['form_time'] : 0;
+        
+        if ($submit_time - $form_time < 3) {
+           // Too fast, likely a bot
+           header("Location: " . $redirect_base . "?msg=c_error#comments");
+           exit;
+        }
 
-       if ($retval) {
-          header("Location: single.php?id=" . $_POST['post_id'] . "&msg=c_success#comments");
-       } else {
-          header("Location: single.php?id=" . $_POST['post_id'] . "&msg=c_error#comments");
-       }
-    }
+        $retval = $database->add_comment($post_id, $_POST['name'], $_POST['email'], $_POST['comment']);
+
+        if ($retval) {
+           header("Location: " . $redirect_base . "?msg=c_success#comments");
+        } else {
+           header("Location: " . $redirect_base . "?msg=c_error#comments");
+        }
+        exit;
+     }
 
    function uploadimage()
    {

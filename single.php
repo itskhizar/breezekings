@@ -23,8 +23,12 @@ if (!$post || $post['status'] !== 'Published') {
 $clean_post_rel = bk_post_url($post['id'], $post['title'], $post['slug']);
 $req_uri = $_SERVER['REQUEST_URI'] ?? '';
 if (strpos($req_uri, 'single.php') !== false) {
+    $extra_query = '';
+    if (!empty($_GET['msg'])) {
+        $extra_query = '?msg=' . urlencode($_GET['msg']);
+    }
     header("HTTP/1.1 301 Moved Permanently");
-    header("Location: " . bk_base_url() . $clean_post_rel);
+    header("Location: " . bk_base_url() . $clean_post_rel . $extra_query . (isset($_GET['msg']) ? '#comments' : ''));
     exit();
 }
 
@@ -396,13 +400,18 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                             <h4 class="text-lg font-bold text-navy-900 mb-6">Leave a Comment</h4>
                             
                             <?php if (isset($_GET['msg']) && $_GET['msg'] == 'c_success'): ?>
-                                <div class="bg-emerald-50 text-emerald-700 p-4 rounded-lg text-sm mb-6 flex items-center gap-2">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                    Your comment has been posted successfully! It will appear once approved.
+                                <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg text-sm mb-6 flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                                    <span>Your comment has been submitted successfully! It will appear once approved.</span>
+                                </div>
+                            <?php elseif (isset($_GET['msg']) && $_GET['msg'] == 'c_error'): ?>
+                                <div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg text-sm mb-6 flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-exclamation text-red-600"></i>
+                                    <span>Unable to post comment. Please fill out all fields properly and try again.</span>
                                 </div>
                             <?php endif; ?>
 
-                            <form action="process.php" method="POST" class="space-y-6">
+                            <form action="/process.php" method="POST" class="space-y-6">
                                 <input type="hidden" name="add_comment" value="1">
                                 <input type="hidden" name="post_id" value="<?php echo $post_id; ?>">
                                 

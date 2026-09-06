@@ -204,9 +204,9 @@ class Session
       }
 
       // Draft fallback logic: Force draft if mandatory fields are missing
-      $status = $data['status'];
+      $status = $data['status'] ?? 'Draft';
       if ($status == 'Published') {
-         if (empty($data['title']) || empty($data['category_id']) || empty($data['content']) || empty($featured_image)) {
+         if (empty($data['title']) || empty($data['category_id']) || empty($data['content'])) {
             $status = 'Draft';
          }
       }
@@ -277,8 +277,8 @@ class Session
       }
 
       // Draft fallback logic: Force draft if mandatory fields are missing
-      if ($data['status'] == 'Published') {
-         if (empty($data['title']) || empty($data['category_id']) || empty($data['content']) || empty($featured_image)) {
+      if (($data['status'] ?? '') == 'Published') {
+         if (empty($data['title']) || empty($data['category_id']) || empty($data['content'])) {
             $post_data['status'] = 'Draft';
          }
       }
