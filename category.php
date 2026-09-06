@@ -20,6 +20,7 @@ if (!$cat_data && $cat_id > 0) {
 }
 
 if (!$cat_data) {
+    header("HTTP/1.1 301 Moved Permanently");
     header("Location: /");
     exit();
 }
@@ -48,7 +49,7 @@ $num_articles = mysqli_num_rows($posts_result);
 $site_url_cat   = bk_base_url();
 $canonical_cat  = $site_url_cat . $clean_cat_rel;
 $cat_intro      = bk_category_description($category_name);
-$cat_meta_desc  = htmlspecialchars(mb_substr(strip_tags($cat_intro), 0, 155));
+$cat_meta_desc  = htmlspecialchars(bk_category_meta_description($category_name));
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -247,7 +248,10 @@ $cat_meta_desc  = htmlspecialchars(mb_substr(strip_tags($cat_intro), 0, 155));
                                     <span class="text-[11px] text-slate-300">&bull;</span>
                                     <span class="text-[11px] text-slate-600 font-medium normal-case flex items-center gap-1.5">
                                         <i class="fa-regular fa-user text-[10px] text-slate-400"></i>
-                                        <?php echo htmlspecialchars($post['author_name'] ?? 'Admin'); ?>
+                                        <?php 
+                                        $display_author = (!empty($post['author_name']) && strcasecmp($post['author_name'], 'Admin') !== 0) ? $post['author_name'] : 'Khizar Ahmad';
+                                        echo htmlspecialchars($display_author); 
+                                        ?>
                                     </span>
                                 </div>
                                 <h3 class="text-xl font-serif font-bold text-navy-900 mb-3 leading-snug group-hover:text-crimson-600 transition-colors" itemprop="headline">

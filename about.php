@@ -20,14 +20,14 @@ $cur_url_a   = $site_url_a . '/about';
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Breezekings">
     <meta property="og:title" content="About Us | Breezekings">
-    <meta property="og:description" content="Learn about Breezekings — an independent digital publication covering nine core categories with clarity and depth.">
+    <meta property="og:description" content="Learn about Breezekings — an independent digital publication covering six core categories with clarity and depth.">
     <meta property="og:url" content="<?php echo $cur_url_a; ?>">
     <meta property="og:image" content="<?php echo $site_url_a; ?>/images/breezekings-icon-red.svg">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="About Us | Breezekings">
-    <meta name="twitter:description" content="Learn about Breezekings — an independent digital publication covering nine core categories with clarity and depth.">
+    <meta name="twitter:description" content="Learn about Breezekings — an independent digital publication covering six core categories with clarity and depth.">
 
     <!-- Structured Data: AboutPage -->
     <script type="application/ld+json">

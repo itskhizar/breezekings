@@ -193,9 +193,8 @@ $footer_email = "azamwaseem44@gmail.com";
                 </p>
                 <div class="bk-footer-socials">
                     <a href="mailto:<?= $footer_email ?>" class="bk-footer-social" aria-label="Email us" title="<?= $footer_email ?>"><i class="fa-solid fa-envelope"></i></a>
-                    <a href="/rss.xml" class="bk-footer-social" aria-label="RSS Feed"><i class="fa-solid fa-rss"></i></a>
-                    <a href="#" class="bk-footer-social" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a href="#" class="bk-footer-social" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="/rss.xml" class="bk-footer-social" aria-label="RSS Feed" title="RSS Feed"><i class="fa-solid fa-rss"></i></a>
+                    <a href="/contact" class="bk-footer-social" aria-label="Contact Us" title="Contact Us"><i class="fa-solid fa-headset"></i></a>
                 </div>
             </div>
 

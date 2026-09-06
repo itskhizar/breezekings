@@ -93,6 +93,13 @@ Options -Indexes
     RewriteRule ^category/[0-9]+/home-improvement/?$ - [G,L]
     RewriteRule ^category/[0-9]+/travel/?$ - [G,L]
 
+    # Legacy query URL 301 Permanent Redirects (/category.php?id=X -> /category/X)
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+category\.php\?id=([0-9]+) [NC]
+    RewriteRule ^category\.php$ /category/%1? [R=301,L]
+
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+single\.php\?id=([0-9]+) [NC]
+    RewriteRule ^single\.php$ /post/%1? [R=301,L]
+
     # 1. Redirect direct .php requests to extensionless URLs (301 Permanent SEO Redirect)
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteCond %{REQUEST_METHOD} !POST

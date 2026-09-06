@@ -33,6 +33,7 @@ if (!$post) {
 }
 
 if (!$post || $post['status'] !== 'Published') {
+    header("HTTP/1.1 301 Moved Permanently");
     header("Location: /");
     exit();
 }
@@ -56,7 +57,10 @@ $search_q = isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '';
 $database->increment_views($post_id);
 
 $author_info = $database->getUserInfo($post['author']);
-$author_name = !empty($post['author_name']) ? $post['author_name'] : (!empty($author_info['display_name']) ? $author_info['display_name'] : (!empty($author_info['username']) ? $author_info['username'] : 'Admin'));
+$author_name = !empty($post['author_name']) ? $post['author_name'] : (!empty($author_info['display_name']) ? $author_info['display_name'] : (!empty($author_info['username']) ? $author_info['username'] : 'Khizar Ahmad'));
+if (empty($author_name) || strcasecmp($author_name, 'Admin') === 0) {
+    $author_name = 'Khizar Ahmad';
+}
 $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name);
 ?>
 <!DOCTYPE html>

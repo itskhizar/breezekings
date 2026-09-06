@@ -601,23 +601,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     <?php endif; ?>
                 </div>
 
-                <!-- ── PAGINATION ─────────────────────────── -->
-                <?php if ($has_posts): ?>
-                    <nav class="mt-12 flex justify-center items-center gap-2" aria-label="Article pagination">
-                        <a href="#" class="pag-btn arrow" aria-label="Previous page">
-                            <i class="fa-solid fa-chevron-left text-xs" aria-hidden="true"></i>
-                        </a>
-                        <a href="#" class="pag-btn active" aria-label="Page 1" aria-current="page">1</a>
-                        <a href="#" class="pag-btn" aria-label="Page 2">2</a>
-                        <a href="#" class="pag-btn" aria-label="Page 3">3</a>
-                        <span class="px-1 text-slate-400 text-sm select-none" aria-hidden="true">…</span>
-                        <a href="#" class="pag-btn" aria-label="Page 12">12</a>
-                        <a href="#" class="pag-btn arrow" aria-label="Next page">
-                            <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
-                        </a>
-                    </nav>
-                <?php endif; ?>
-
                 </section>
                 <!-- ── /LATEST ARTICLES ────────────────────────── -->
 

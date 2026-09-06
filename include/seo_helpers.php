@@ -154,6 +154,25 @@ if (!function_exists('bk_category_description')) {
     }
 }
 
+if (!function_exists('bk_category_meta_description')) {
+    /**
+     * Returns concise, complete meta description strictly under 155 characters for SEO
+     */
+    function bk_category_meta_description($category_name = '') {
+        $key = strtolower(trim($category_name));
+        $meta_descriptions = [
+            'technology'    => "Explore tech breakthroughs, AI, software engineering, gadgets, and digital security with expert reporting on Breezekings.",
+            'business'      => "Insightful reporting on global markets, startup strategies, economics, and corporate leadership on Breezekings.",
+            'entertainment' => "In-depth reviews and cultural commentary on cinema, television, streaming media, and music on Breezekings.",
+            'health'        => "Evidence-based guides on physical fitness, mental resilience, nutritional science, and daily vitality on Breezekings.",
+            'lifestyle'     => "Practical advice on digital minimalism, travel, intentional living, interior design, and personal growth on Breezekings.",
+            'news'          => "Timely, balanced reporting and verified analysis on essential global events and current affairs on Breezekings."
+        ];
+
+        return $meta_descriptions[$key] ?? ("Explore comprehensive articles, analysis, and expert perspectives in " . htmlspecialchars($category_name) . " on Breezekings.");
+    }
+}
+
 if (!function_exists('bk_thumb_url')) {
     /**
      * Returns absolute thumbnail URL with fallback for post images

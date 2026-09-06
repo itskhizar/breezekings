@@ -382,9 +382,28 @@ if ($_nav_cats_result) {
         $_all_cats[] = $r;
     }
 }
-// Top 5 categories for direct display in center
+
+// Prioritize Technology and 5 main categories directly in center nav
+$priority_order = [
+    'technology'    => 1,
+    'business'      => 2,
+    'entertainment' => 3,
+    'health'        => 4,
+    'lifestyle'     => 5,
+    'news'          => 6
+];
+usort($_all_cats, function($a, $b) use ($priority_order) {
+    $pa = $priority_order[strtolower(trim($a['category']))] ?? 99;
+    $pb = $priority_order[strtolower(trim($b['category']))] ?? 99;
+    if ($pa !== $pb) {
+        return $pa - $pb;
+    }
+    return strcasecmp($a['category'], $b['category']);
+});
+
+// Top 5 main categories for direct display in center nav (Technology, Business, Entertainment, Health, Lifestyle)
 $_primary_cats = array_slice($_all_cats, 0, 5);
-// Remaining categories for "More" dropdown
+// Remaining categories for "More" dropdown (e.g. News, and any others)
 $_more_cats = array_slice($_all_cats, 5);
 ?>
 
