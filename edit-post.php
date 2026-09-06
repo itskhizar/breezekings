@@ -797,9 +797,16 @@ if ($session->userlevel < 1 && !$is_author) {
         const linkModalUnlinkBtn = document.getElementById('linkModalUnlinkBtn');
 
         function findEnclosingLink() {
-            const sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return null;
-            let node = sel.anchorNode;
+            let node = null;
+            if (savedRange) {
+                node = savedRange.commonAncestorContainer;
+            }
+            if (!node || node === editor) {
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount > 0) {
+                    node = sel.anchorNode;
+                }
+            }
             while (node && node !== editor) {
                 if (node.nodeType === 1 && node.tagName.toLowerCase() === 'a') {
                     return node;
@@ -814,11 +821,16 @@ if ($session->userlevel < 1 && !$is_author) {
 
             // Prioritize active selection in editor
             const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0 && (editor.contains(sel.anchorNode) || editor === sel.anchorNode)) {
-                savedRange = sel.getRangeAt(0).cloneRange();
+            if (sel && sel.rangeCount > 0) {
+                const r = sel.getRangeAt(0);
+                if (editor.contains(r.commonAncestorContainer) || editor === r.commonAncestorContainer) {
+                    savedRange = r.cloneRange();
+                }
             }
 
-            activeLinkNode = findEnclosingLink();
+            if (!activeLinkNode) {
+                activeLinkNode = findEnclosingLink();
+            }
 
             if (activeLinkNode) {
                 linkModalTitle.innerText = 'Edit Link';
@@ -846,8 +858,6 @@ if ($session->userlevel < 1 && !$is_author) {
                 let selectedText = '';
                 if (savedRange && !savedRange.collapsed) {
                     selectedText = savedRange.toString().trim();
-                } else if (sel) {
-                    selectedText = sel.toString().trim();
                 }
                 selectedTextOnModalOpen = selectedText;
                 linkTextInput.value = selectedText;
@@ -858,6 +868,7 @@ if ($session->userlevel < 1 && !$is_author) {
             }
 
             linkModal.classList.remove('hidden');
+            linkModal.style.display = 'flex';
             setTimeout(() => {
                 linkUrlInput.focus();
                 linkUrlInput.select();
@@ -866,6 +877,7 @@ if ($session->userlevel < 1 && !$is_author) {
 
         function closeLinkModal() {
             linkModal.classList.add('hidden');
+            linkModal.style.display = 'none';
             activeLinkNode = null;
         }
 
@@ -909,52 +921,45 @@ if ($session->userlevel < 1 && !$is_author) {
                 }
             } else {
                 // Inserting new link on selected word/sentence or at caret
-                restoreSelection();
-                editor.focus();
-
                 if (savedRange && !savedRange.collapsed) {
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(savedRange);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    if (isBlank) a.setAttribute('target', '_blank');
+                    if (relAttr) a.setAttribute('rel', relAttr);
 
-                    // Use execCommand createLink with a temporary unique token to safely wrap selection
-                    const tempToken = 'https://__bk_link_' + Date.now() + '__/';
-                    document.execCommand('createLink', false, tempToken);
-
-                    // Configure all generated anchor tags
-                    const createdLinks = editor.querySelectorAll(`a[href="${tempToken}"]`);
-                    if (createdLinks.length > 0) {
-                        createdLinks.forEach(a => {
-                            a.setAttribute('href', url);
-                            if (isBlank) a.setAttribute('target', '_blank'); else a.removeAttribute('target');
-                            if (relAttr) a.setAttribute('rel', relAttr); else a.removeAttribute('rel');
-                            if (createdLinks.length === 1 && text && text !== selectedTextOnModalOpen) {
-                                a.textContent = text;
-                            }
-                        });
+                    if (text && text !== selectedTextOnModalOpen) {
+                        a.textContent = text;
+                        savedRange.deleteContents();
+                        savedRange.insertNode(a);
                     } else {
-                        // Fallback insertion
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.textContent = text || savedRange.toString() || url;
-                        if (isBlank) a.target = '_blank';
-                        if (relAttr) a.setAttribute('rel', relAttr);
                         try {
-                            savedRange.deleteContents();
+                            savedRange.surroundContents(a);
+                        } catch (err) {
+                            const fragment = savedRange.extractContents();
+                            a.appendChild(fragment);
                             savedRange.insertNode(a);
-                        } catch(err) {
-                            editor.appendChild(a);
                         }
+                    }
+
+                    // Move caret right after inserted link
+                    const sel = window.getSelection();
+                    if (sel) {
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(a);
+                        newRange.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
+                        savedRange = newRange.cloneRange();
                     }
                 } else {
                     // Caret is collapsed (no text selected) -> insert new link
                     const a = document.createElement('a');
                     a.href = url;
                     a.textContent = text || url;
-                    if (isBlank) a.target = '_blank';
+                    if (isBlank) a.setAttribute('target', '_blank');
                     if (relAttr) a.setAttribute('rel', relAttr);
 
-                    if (savedRange) {
+                    if (savedRange && editor.contains(savedRange.commonAncestorContainer)) {
                         savedRange.insertNode(a);
                     } else {
                         editor.appendChild(a);
@@ -975,27 +980,45 @@ if ($session->userlevel < 1 && !$is_author) {
 
             closeLinkModal();
             updateWordCount();
+            const postContentInput = document.getElementById('postContent');
+            if (postContentInput) {
+                postContentInput.value = editor.innerHTML;
+            }
         }
 
         function removeModalLink() {
             if (activeLinkNode) {
-                const textNode = document.createTextNode(activeLinkNode.textContent);
-                activeLinkNode.parentNode.replaceChild(textNode, activeLinkNode);
+                const parent = activeLinkNode.parentNode;
+                while (activeLinkNode.firstChild) {
+                    parent.insertBefore(activeLinkNode.firstChild, activeLinkNode);
+                }
+                parent.removeChild(activeLinkNode);
             }
             closeLinkModal();
             updateWordCount();
+            const postContentInput = document.getElementById('postContent');
+            if (postContentInput) {
+                postContentInput.value = editor.innerHTML;
+            }
         }
 
         function removeActiveLink() {
             if (isHtmlMode) return;
             const link = findEnclosingLink();
             if (link) {
-                const textNode = document.createTextNode(link.textContent);
-                link.parentNode.replaceChild(textNode, link);
+                const parent = link.parentNode;
+                while (link.firstChild) {
+                    parent.insertBefore(link.firstChild, link);
+                }
+                parent.removeChild(link);
             } else {
                 document.execCommand('unlink', false, null);
             }
             updateWordCount();
+            const postContentInput = document.getElementById('postContent');
+            if (postContentInput) {
+                postContentInput.value = editor.innerHTML;
+            }
         }
 
         editor.addEventListener('click', function(e) {
