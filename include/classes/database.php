@@ -187,24 +187,50 @@ class MySQLDB
       return $reading_time;
    }
 
+   /**
+    * WordPress-style unique slug generator (e.g. tech-trends, tech-trends-2, tech-trends-3)
+    */
+   function get_unique_slug($string, $exclude_id = 0)
+   {
+      $slug = bk_slugify($string);
+      if (empty($slug)) $slug = 'post';
+      $original_slug = $slug;
+      $count = 1;
+      $exclude_sql = $exclude_id > 0 ? " AND id != " . (int)$exclude_id : "";
+
+      while (true) {
+         $escaped = mysqli_real_escape_string($this->connection, $slug);
+         $chk = mysqli_query($this->connection, "SELECT id FROM `posts` WHERE `slug` = '$escaped' $exclude_sql LIMIT 1");
+         if (!$chk || mysqli_num_rows($chk) == 0) {
+            break;
+         }
+         $count++;
+         $slug = $original_slug . '-' . $count;
+      }
+      return $slug;
+   }
+
    /* ---------- Post Methods ---------- */
 
    function addpost($data)
    {
       $title = mysqli_real_escape_string($this->connection, $data['title']);
-      $slug = mysqli_real_escape_string($this->connection, $data['slug']);
+      $raw_slug = !empty($data['slug']) ? $data['slug'] : $data['title'];
+      $slug = mysqli_real_escape_string($this->connection, $this->get_unique_slug($raw_slug));
       $content = mysqli_real_escape_string($this->connection, $data['content']);
       $excerpt = $data['excerpt'];
       if (empty($excerpt)) {
          $excerpt = $this->generateExcerpt($data['content']);
       }
+      $meta_title = !empty($data['meta_title']) ? $data['meta_title'] : $data['title'];
+      $meta_description = !empty($data['meta_description']) ? $data['meta_description'] : $excerpt;
       $excerpt = mysqli_real_escape_string($this->connection, $excerpt);
       $category_id = (int) $data['category_id'];
       $author = mysqli_real_escape_string($this->connection, $data['author']);
       $status = mysqli_real_escape_string($this->connection, $data['status']);
       $featured_image = mysqli_real_escape_string($this->connection, $data['featured_image']);
-      $meta_title = mysqli_real_escape_string($this->connection, $data['meta_title']);
-      $meta_description = mysqli_real_escape_string($this->connection, $data['meta_description']);
+      $meta_title = mysqli_real_escape_string($this->connection, $meta_title);
+      $meta_description = mysqli_real_escape_string($this->connection, $meta_description);
       $tags = mysqli_real_escape_string($this->connection, $data['tags']);
       $is_featured = (int) ($data['is_featured'] ?? 0);
       $published_at = ($status == 'Published') ? "NOW()" : "NULL";
@@ -219,17 +245,20 @@ class MySQLDB
    {
       $id = (int) $id;
       $title = mysqli_real_escape_string($this->connection, $data['title']);
-      $slug = mysqli_real_escape_string($this->connection, $data['slug']);
+      $raw_slug = !empty($data['slug']) ? $data['slug'] : $data['title'];
+      $slug = mysqli_real_escape_string($this->connection, $this->get_unique_slug($raw_slug, $id));
       $content = mysqli_real_escape_string($this->connection, $data['content']);
       $excerpt = $data['excerpt'];
       if (empty($excerpt)) {
          $excerpt = $this->generateExcerpt($data['content']);
       }
+      $meta_title = !empty($data['meta_title']) ? $data['meta_title'] : $data['title'];
+      $meta_description = !empty($data['meta_description']) ? $data['meta_description'] : $excerpt;
       $excerpt = mysqli_real_escape_string($this->connection, $excerpt);
       $category_id = (int) $data['category_id'];
       $status = mysqli_real_escape_string($this->connection, $data['status']);
-      $meta_title = mysqli_real_escape_string($this->connection, $data['meta_title']);
-      $meta_description = mysqli_real_escape_string($this->connection, $data['meta_description']);
+      $meta_title = mysqli_real_escape_string($this->connection, $meta_title);
+      $meta_description = mysqli_real_escape_string($this->connection, $meta_description);
       $tags = mysqli_real_escape_string($this->connection, $data['tags']);
       $is_featured = (int) ($data['is_featured'] ?? 0);
 

@@ -73,6 +73,15 @@ if (!$session->logged_in) {
         .editor-content code { background-color: #f1f5f9; color: #c5202b; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; font-family: monospace; }
         .editor-content hr { border: 0; border-top: 1px solid #e2e8f0; margin: 2rem 0; }
         .editor-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1.5rem auto; display: block; }
+
+        /* WordPress-style editor placeholder */
+        .editor-content:empty::before {
+            content: attr(data-placeholder);
+            color: #94a3b8;
+            font-style: italic;
+            pointer-events: none;
+            display: block;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased">
@@ -124,6 +133,20 @@ if (!$session->logged_in) {
                     </div>
                 <?php endif; ?>
 
+                <!-- WordPress-style Draft Recovery Banner -->
+                <div id="draftRestoreBanner" class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 hidden shadow-xs">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-6 h-6 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-clock-rotate-left text-amber-700 text-[11px]"></i>
+                        </div>
+                        <span>An autosaved post draft is available (<span id="draftTime" class="font-semibold">recently</span>). Would you like to restore it?</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" onclick="confirmRestoreDraft()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-md transition-colors shadow-xs">Restore Draft</button>
+                        <button type="button" onclick="discardDraft()" class="px-3 py-1.5 text-amber-700 hover:text-amber-900 hover:bg-amber-100 rounded-md transition-colors">Discard</button>
+                    </div>
+                </div>
+
                 <!-- Content Grid -->
                 <form action="process.php" method="POST" enctype="multipart/form-data" id="postForm">
                     <input type="hidden" name="add_post" value="1">
@@ -137,17 +160,30 @@ if (!$session->logged_in) {
                             <!-- Main Editor Card -->
                             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
                                 
-                                <!-- Title Input -->
+                                <!-- Title Input (WordPress-style clean start) -->
                                 <div class="p-6 border-b border-slate-100">
                                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">Post Title <span class="text-red-500">*</span></label>
-                                    <input type="text" name="title" id="postTitle" required class="w-full text-3xl font-bold text-slate-800 border-none outline-none placeholder-slate-300" placeholder="Enter post title here...">
+                                    <input type="text" name="title" id="postTitle" required class="w-full text-3xl font-bold text-slate-800 border-none outline-none placeholder-slate-300" placeholder="Add title" autocomplete="off">
                                     
-                                    <!-- Slug Input -->
-                                    <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
-                                        <span class="font-semibold text-slate-700"><i class="fa-solid fa-link text-[10px] text-crimson-600 mr-1"></i> Clean Permalink:</span>
-                                        <span class="text-slate-400 font-mono">/post/bk.../</span>
-                                        <input type="text" name="slug" id="postSlug" class="border-none p-0 focus:ring-0 text-crimson-600 font-semibold font-mono bg-transparent min-w-[220px]" placeholder="post-slug-auto-generated">
-                                        <button type="button" onclick="generateSlug()" title="Regenerate slug from title" class="text-slate-400 hover:text-crimson-600 ml-auto flex items-center gap-1 text-[11px] font-medium"><i class="fa-solid fa-arrows-rotate"></i> Auto-Generate</button>
+                                    <!-- WordPress-style Clean Permalink Bar -->
+                                    <div id="permalinkBox" class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                                        <span class="font-semibold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-link text-crimson-600 text-xs"></i> Permalink:</span>
+                                        <span class="text-slate-400 font-mono">https://breezekings.com/post/</span>
+                                        <span id="slugDisplayWrapper" class="flex items-center gap-1 font-mono">
+                                            <span id="slugPreview" class="text-crimson-600 font-semibold">(auto-generated from title)</span>
+                                            <input type="text" name="slug" id="postSlug" class="hidden font-mono text-xs text-crimson-600 font-semibold bg-white border border-slate-300 rounded px-2 py-0.5 outline-none focus:border-crimson-500 focus:ring-1 focus:ring-crimson-500 min-w-[200px]" placeholder="post-slug">
+                                        </span>
+                                        <div class="ml-auto flex items-center gap-1.5">
+                                            <button type="button" id="editSlugBtn" onclick="toggleEditSlug()" class="text-slate-600 hover:text-navy-900 px-2.5 py-1 rounded bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-medium transition-all shadow-xs flex items-center gap-1">
+                                                <i class="fa-solid fa-pen text-[10px]"></i> Edit
+                                            </button>
+                                            <button type="button" id="saveSlugBtn" onclick="saveCustomSlug()" class="hidden text-white bg-crimson-600 hover:bg-crimson-700 px-2.5 py-1 rounded text-[11px] font-medium transition-all shadow-xs flex items-center gap-1">
+                                                <i class="fa-solid fa-check text-[10px]"></i> OK
+                                            </button>
+                                            <button type="button" id="resetSlugBtn" onclick="resetSlugToTitle()" title="Reset to auto-generate from title" class="text-slate-400 hover:text-crimson-600 px-2 py-1 text-[11px] font-medium transition-colors hidden flex items-center gap-1">
+                                                <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Reset
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -217,9 +253,7 @@ if (!$session->logged_in) {
 
                                 <!-- Content Area -->
                                 <div class="p-6 flex-1 min-h-[420px] relative">
-                                    <div id="editor" class="w-full min-h-[380px] text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true">
-                                        <p>Start writing your amazing post content here...</p>
-                                    </div>
+                                    <div id="editor" class="w-full min-h-[380px] text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true" data-placeholder="Start writing or paste your article content here..."></div>
                                     <textarea id="rawHtmlEditor" class="w-full min-h-[380px] p-4 font-mono text-xs text-slate-100 bg-slate-900 rounded-lg outline-none resize-y hidden leading-relaxed" placeholder="Paste or edit raw HTML article content here..."></textarea>
                                 </div>
 
@@ -462,30 +496,96 @@ if (!$session->logged_in) {
                 .replace(/^-+|-+$/g, '');
         }
 
-        const postTitle = document.getElementById('postTitle');
-        const postSlug  = document.getElementById('postSlug');
-        let slugManuallyChanged = false;
+        const postTitle       = document.getElementById('postTitle');
+        const postSlug        = document.getElementById('postSlug');
+        const slugPreview     = document.getElementById('slugPreview');
+        const editSlugBtn     = document.getElementById('editSlugBtn');
+        const saveSlugBtn     = document.getElementById('saveSlugBtn');
+        const resetSlugBtn    = document.getElementById('resetSlugBtn');
+        let slugIsCustomized  = false;
 
-        if (postSlug) {
-            postSlug.addEventListener('input', function() {
-                slugManuallyChanged = postSlug.value.trim().length > 0;
-            });
+        function updateSlugDisplay() {
+            if (!postSlug || !slugPreview) return;
+            const currentSlug = postSlug.value.trim();
+            if (currentSlug) {
+                slugPreview.textContent = currentSlug;
+                slugPreview.classList.remove('text-slate-400', 'italic');
+                slugPreview.classList.add('text-crimson-600', 'font-semibold');
+            } else {
+                slugPreview.textContent = '(auto-generated from title)';
+                slugPreview.classList.add('text-slate-400', 'italic');
+                slugPreview.classList.remove('text-crimson-600');
+            }
         }
 
         if (postTitle) {
             postTitle.addEventListener('input', function() {
-                if (!slugManuallyChanged && postSlug) {
+                if (!slugIsCustomized && postSlug) {
                     postSlug.value = slugify(postTitle.value);
+                    updateSlugDisplay();
                 }
             });
         }
 
-        function generateSlug() {
-            if (postTitle && postSlug) {
-                const s = slugify(postTitle.value);
-                postSlug.value = s || 'article';
-                slugManuallyChanged = false;
+        function toggleEditSlug() {
+            if (!postSlug) return;
+            slugPreview.classList.add('hidden');
+            postSlug.classList.remove('hidden');
+            editSlugBtn.classList.add('hidden');
+            saveSlugBtn.classList.remove('hidden');
+            resetSlugBtn.classList.remove('hidden');
+            postSlug.focus();
+            postSlug.select();
+        }
+
+        function saveCustomSlug() {
+            if (!postSlug) return;
+            let clean = slugify(postSlug.value);
+            if (!clean && postTitle) {
+                clean = slugify(postTitle.value);
             }
+            postSlug.value = clean;
+            slugIsCustomized = clean.length > 0;
+            updateSlugDisplay();
+
+            postSlug.classList.add('hidden');
+            slugPreview.classList.remove('hidden');
+            saveSlugBtn.classList.add('hidden');
+            editSlugBtn.classList.remove('hidden');
+            if (slugIsCustomized) {
+                resetSlugBtn.classList.remove('hidden');
+            } else {
+                resetSlugBtn.classList.add('hidden');
+            }
+        }
+
+        function resetSlugToTitle() {
+            slugIsCustomized = false;
+            if (postTitle && postSlug) {
+                postSlug.value = slugify(postTitle.value);
+                updateSlugDisplay();
+            }
+            postSlug.classList.add('hidden');
+            slugPreview.classList.remove('hidden');
+            saveSlugBtn.classList.add('hidden');
+            editSlugBtn.classList.remove('hidden');
+            resetSlugBtn.classList.add('hidden');
+        }
+
+        if (postSlug) {
+            postSlug.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveCustomSlug();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    postSlug.classList.add('hidden');
+                    slugPreview.classList.remove('hidden');
+                    saveSlugBtn.classList.add('hidden');
+                    editSlugBtn.classList.remove('hidden');
+                    if (!slugIsCustomized) resetSlugBtn.classList.add('hidden');
+                }
+            });
         }
 
         // ── Tag System ───────────────────────────────────────────────────────
@@ -904,38 +1004,95 @@ if (!$session->logged_in) {
         editor.addEventListener('input', updateWordCount);
         updateWordCount();
 
-        // ── localStorage Auto-save ───────────────────────────────────────────
+        // ── localStorage Auto-save & WordPress-style Draft Recovery ──────────
         const DRAFT_KEY = 'bk_draft_create';
+        let activeDraftData = null;
 
         function saveDraft() {
+            const titleVal = postTitle ? postTitle.value.trim() : '';
+            const contentVal = isHtmlMode ? rawHtmlEditor.value.trim() : (editor.innerText ? editor.innerText.trim() : '');
+            if (!titleVal && !contentVal) {
+                return;
+            }
+
             const content = isHtmlMode ? rawHtmlEditor.value : editor.innerHTML;
             const data = {
-                title:   postTitle ? postTitle.value : '',
-                slug:    postSlug  ? postSlug.value  : '',
-                content: content,
-                ts:      Date.now()
+                title:      postTitle ? postTitle.value : '',
+                slug:       postSlug  ? postSlug.value  : '',
+                slugCustom: slugIsCustomized,
+                content:    content,
+                tags:       tags,
+                ts:         Date.now()
             };
             try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch(e) {}
         }
 
-        function restoreDraft() {
+        function checkForDraft() {
             try {
                 const saved = localStorage.getItem(DRAFT_KEY);
                 if (!saved) return;
                 const data = JSON.parse(saved);
-                if ((Date.now() - data.ts) > 43200000) { localStorage.removeItem(DRAFT_KEY); return; }
-                if (postTitle && !postTitle.value && data.title) postTitle.value = data.title;
-                if (postSlug  && !postSlug.value  && data.slug)  postSlug.value  = data.slug;
-                if (editor && data.content && editor.innerHTML.trim().length < 50) {
-                    editor.innerHTML = data.content;
-                    if (rawHtmlEditor) rawHtmlEditor.value = data.content;
-                    updateWordCount();
+                if ((Date.now() - data.ts) > 86400000) {
+                    localStorage.removeItem(DRAFT_KEY);
+                    return;
+                }
+                const hasTitle = data.title && data.title.trim().length > 0;
+                const hasContent = data.content && data.content.trim().length > 15;
+                if (!hasTitle && !hasContent) return;
+
+                activeDraftData = data;
+                const banner = document.getElementById('draftRestoreBanner');
+                const timeEl = document.getElementById('draftTime');
+                if (banner && timeEl) {
+                    const minutesAgo = Math.round((Date.now() - data.ts) / 60000);
+                    let timeStr = 'just now';
+                    if (minutesAgo >= 60) {
+                        timeStr = Math.round(minutesAgo / 60) + ' hour(s) ago';
+                    } else if (minutesAgo > 1) {
+                        timeStr = minutesAgo + ' minutes ago';
+                    }
+                    timeEl.textContent = timeStr;
+                    banner.classList.remove('hidden');
                 }
             } catch(e) {}
         }
 
-        restoreDraft();
-        setInterval(saveDraft, 10000);
+        function confirmRestoreDraft() {
+            if (!activeDraftData) return;
+            if (postTitle && activeDraftData.title) {
+                postTitle.value = activeDraftData.title;
+            }
+            if (postSlug && activeDraftData.slug) {
+                postSlug.value = activeDraftData.slug;
+                slugIsCustomized = !!activeDraftData.slugCustom;
+                updateSlugDisplay();
+                if (slugIsCustomized && resetSlugBtn) {
+                    resetSlugBtn.classList.remove('hidden');
+                }
+            }
+            if (activeDraftData.content) {
+                if (editor) editor.innerHTML = activeDraftData.content;
+                if (rawHtmlEditor) rawHtmlEditor.value = activeDraftData.content;
+                updateWordCount();
+            }
+            if (activeDraftData.tags && Array.isArray(activeDraftData.tags)) {
+                tags = activeDraftData.tags;
+                updateTags();
+            }
+            const banner = document.getElementById('draftRestoreBanner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function discardDraft() {
+            try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+            activeDraftData = null;
+            const banner = document.getElementById('draftRestoreBanner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        // Check if an autosaved draft exists (DO NOT auto-fill inputs!)
+        checkForDraft();
+        setInterval(saveDraft, 15000);
         editor.addEventListener('input', saveDraft);
 
         document.getElementById('postForm').addEventListener('submit', function() {

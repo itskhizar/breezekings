@@ -157,15 +157,30 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">Post Title <span class="text-red-500">*</span></label>
                                     <input type="text" name="title" id="postTitle" required class="w-full text-3xl font-bold text-slate-800 border-none outline-none placeholder-slate-300" placeholder="Enter post title here..." value="<?php echo htmlspecialchars($post['title']); ?>">
                                     
-                                    <!-- Slug Input -->
-                                    <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
-                                        <span class="font-semibold text-slate-700"><i class="fa-solid fa-link text-[10px] text-crimson-600 mr-1"></i> Clean Permalink:</span>
-                                        <span class="text-slate-400 font-mono">/post/<?php echo bk_encode_id($post['id']); ?>/</span>
-                                        <input type="text" name="slug" id="postSlug" class="border-none p-0 focus:ring-0 text-crimson-600 font-semibold font-mono bg-transparent min-w-[200px]" placeholder="post-slug-here" value="<?php echo htmlspecialchars($post['slug']); ?>">
-                                        <button type="button" onclick="generateSlug()" title="Regenerate slug from title" class="text-slate-400 hover:text-crimson-600 flex items-center gap-1 text-[11px] font-medium"><i class="fa-solid fa-arrows-rotate"></i> Auto-Generate</button>
-                                        <?php if ($post['status'] === 'Published'): ?>
-                                        <a href="<?php echo bk_post_url($post); ?>" target="_blank" class="ml-auto text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 text-[11px]"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Live</a>
-                                        <?php endif; ?>
+                                    <!-- WordPress-style Clean Permalink Bar -->
+                                    <div id="permalinkBox" class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                                        <span class="font-semibold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-link text-crimson-600 text-xs"></i> Permalink:</span>
+                                        <span class="text-slate-400 font-mono">https://breezekings.com/post/</span>
+                                        <span id="slugDisplayWrapper" class="flex items-center gap-1 font-mono">
+                                            <span id="slugPreview" class="text-crimson-600 font-semibold"><?php echo htmlspecialchars($post['slug']); ?></span>
+                                            <input type="text" name="slug" id="postSlug" value="<?php echo htmlspecialchars($post['slug']); ?>" class="hidden font-mono text-xs text-crimson-600 font-semibold bg-white border border-slate-300 rounded px-2 py-0.5 outline-none focus:border-crimson-500 focus:ring-1 focus:ring-crimson-500 min-w-[200px]" placeholder="post-slug">
+                                        </span>
+                                        <div class="ml-auto flex items-center gap-1.5">
+                                            <button type="button" id="editSlugBtn" onclick="toggleEditSlug()" class="text-slate-600 hover:text-navy-900 px-2.5 py-1 rounded bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-medium transition-all shadow-xs flex items-center gap-1">
+                                                <i class="fa-solid fa-pen text-[10px]"></i> Edit
+                                            </button>
+                                            <button type="button" id="saveSlugBtn" onclick="saveCustomSlug()" class="hidden text-white bg-crimson-600 hover:bg-crimson-700 px-2.5 py-1 rounded text-[11px] font-medium transition-all shadow-xs flex items-center gap-1">
+                                                <i class="fa-solid fa-check text-[10px]"></i> OK
+                                            </button>
+                                            <button type="button" id="resetSlugBtn" onclick="resetSlugToTitle()" title="Reset to auto-generate from title" class="text-slate-400 hover:text-crimson-600 px-2 py-1 text-[11px] font-medium transition-colors flex items-center gap-1">
+                                                <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Reset
+                                            </button>
+                                            <?php if ($post['status'] === 'Published'): ?>
+                                            <a href="<?php echo bk_post_url($post); ?>" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 text-[11px] ml-2 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
+                                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> View Live
+                                            </a>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -461,6 +476,88 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                 openLinkModal();
             }
         });
+
+        // ── Slugify & Permalink Management (WordPress-style) ──────────────────
+        function slugify(text) {
+            return text.toString().toLowerCase().trim()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/[\s-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        const postTitle    = document.getElementById('postTitle');
+        const postSlug     = document.getElementById('postSlug');
+        const slugPreview  = document.getElementById('slugPreview');
+        const editSlugBtn  = document.getElementById('editSlugBtn');
+        const saveSlugBtn  = document.getElementById('saveSlugBtn');
+        const resetSlugBtn = document.getElementById('resetSlugBtn');
+
+        function updateSlugDisplay() {
+            if (!postSlug || !slugPreview) return;
+            const currentSlug = postSlug.value.trim();
+            if (currentSlug) {
+                slugPreview.textContent = currentSlug;
+                slugPreview.classList.remove('text-slate-400', 'italic');
+                slugPreview.classList.add('text-crimson-600', 'font-semibold');
+            } else {
+                slugPreview.textContent = '(auto-generated from title)';
+                slugPreview.classList.add('text-slate-400', 'italic');
+                slugPreview.classList.remove('text-crimson-600');
+            }
+        }
+
+        function toggleEditSlug() {
+            if (!postSlug) return;
+            slugPreview.classList.add('hidden');
+            postSlug.classList.remove('hidden');
+            editSlugBtn.classList.add('hidden');
+            saveSlugBtn.classList.remove('hidden');
+            postSlug.focus();
+            postSlug.select();
+        }
+
+        function saveCustomSlug() {
+            if (!postSlug) return;
+            let clean = slugify(postSlug.value);
+            if (!clean && postTitle) {
+                clean = slugify(postTitle.value);
+            }
+            postSlug.value = clean;
+            updateSlugDisplay();
+
+            postSlug.classList.add('hidden');
+            slugPreview.classList.remove('hidden');
+            saveSlugBtn.classList.add('hidden');
+            editSlugBtn.classList.remove('hidden');
+        }
+
+        function resetSlugToTitle() {
+            if (postTitle && postSlug) {
+                postSlug.value = slugify(postTitle.value);
+                updateSlugDisplay();
+            }
+            postSlug.classList.add('hidden');
+            slugPreview.classList.remove('hidden');
+            saveSlugBtn.classList.add('hidden');
+            editSlugBtn.classList.remove('hidden');
+        }
+
+        if (postSlug) {
+            postSlug.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveCustomSlug();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    postSlug.classList.add('hidden');
+                    slugPreview.classList.remove('hidden');
+                    saveSlugBtn.classList.add('hidden');
+                    editSlugBtn.classList.remove('hidden');
+                }
+            });
+        }
 
         // ── Image Preview ────────────────────────────────────────────────────
         function previewImage(input) {

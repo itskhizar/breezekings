@@ -11,8 +11,26 @@ if (!empty($_GET['id']) && is_numeric($_GET['id'])) {
     $post_id = bk_decode_id($_GET['id']);
 }
 
-$post_query = $database->query("SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) WHERE p.id = $post_id");
-$post = mysqli_fetch_assoc($post_query);
+$post = null;
+if ($post_id > 0) {
+    $post_query = $database->query("SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) WHERE p.id = $post_id");
+    if ($post_query && mysqli_num_rows($post_query) > 0) {
+        $post = mysqli_fetch_assoc($post_query);
+    }
+}
+
+// Fallback: Resolve by slug (WordPress style permalink, e.g. /post/my-article-title)
+if (!$post) {
+    $slug_candidate = !empty($_GET['slug']) ? trim($_GET['slug']) : (!empty($_GET['id']) ? trim($_GET['id']) : '');
+    if (!empty($slug_candidate)) {
+        $slug_clean = mysqli_real_escape_string($database->connection, $slug_candidate);
+        $post_query = $database->query("SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) WHERE p.slug = '$slug_clean' LIMIT 1");
+        if ($post_query && mysqli_num_rows($post_query) > 0) {
+            $post = mysqli_fetch_assoc($post_query);
+            $post_id = (int)$post['id'];
+        }
+    }
+}
 
 if (!$post || $post['status'] !== 'Published') {
     header("Location: /");
