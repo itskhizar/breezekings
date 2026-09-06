@@ -217,8 +217,21 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
         .article-content p {
             margin-bottom: 1.5rem;
             font-size: 1.05rem;
-            line-height: 1.8;
+            line-height: 1.85;
             color: #334155;
+        }
+
+        .article-content a {
+            color: #C5202B;
+            font-weight: 600;
+            text-decoration: underline;
+            text-decoration-thickness: 1.5px;
+            text-underline-offset: 3px;
+            transition: color 0.15s ease, text-decoration-color 0.15s ease;
+        }
+        .article-content a:hover {
+            color: #0B1F3A;
+            text-decoration-color: #0B1F3A;
         }
         
         .article-content h2 {
@@ -237,22 +250,111 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
 
         .article-content h3 {
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             color: #0f172a;
             margin-top: 2.5rem;
             margin-bottom: 1rem;
         }
 
-        .article-quote {
+        .article-content h4 {
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #1e293b;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .article-content ul {
+            list-style-type: disc;
+            padding-left: 1.75rem;
+            margin-bottom: 1.75rem;
+            color: #334155;
+        }
+        .article-content ol {
+            list-style-type: decimal;
+            padding-left: 1.75rem;
+            margin-bottom: 1.75rem;
+            color: #334155;
+        }
+        .article-content li {
+            margin-bottom: 0.5rem;
+            line-height: 1.75;
+            font-size: 1.05rem;
+        }
+
+        .article-content blockquote, .article-quote {
             font-family: 'Playfair Display', serif;
             font-style: italic;
-            font-size: 1.5rem;
-            color: #475569;
-            background-color: #fffbeb; /* Light yellow */
-            padding: 2rem;
+            font-size: 1.25rem;
+            color: #334155;
+            background-color: #f8fafc;
+            padding: 1.5rem 2rem;
             border-left: 4px solid #e12b38;
+            margin: 2rem 0;
+            line-height: 1.7;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.95rem;
+            background: #fff;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .article-content th, .article-content td {
+            border: 1px solid #e2e8f0;
+            padding: 0.85rem 1.1rem;
+            text-align: left;
+        }
+        .article-content th {
+            background-color: #f1f5f9;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .article-content tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        .article-content hr {
+            border: 0;
+            border-top: 1px solid #e2e8f0;
             margin: 2.5rem 0;
+        }
+
+        .article-content code {
+            background-color: #f1f5f9;
+            color: #c5202b;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+        .article-content pre {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 2rem 0;
+            font-size: 0.9rem;
             line-height: 1.6;
+        }
+        .article-content pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            margin: 1.75rem auto;
+            display: block;
         }
 
         /* Diagonal lines background for hero */

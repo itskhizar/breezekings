@@ -67,6 +67,26 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         .editor-content::-webkit-scrollbar { width: 6px; }
         .editor-content::-webkit-scrollbar-track { background: transparent; }
         .editor-content::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+        /* Editor content typography */
+        .editor-content { min-height: 380px; font-family: 'Inter', sans-serif; color: #334155; }
+        .editor-content p { margin-bottom: 1.1rem; line-height: 1.8; }
+        .editor-content a { color: #C5202B; font-weight: 600; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: pointer; }
+        .editor-content a:hover { color: #0B1F3A; }
+        .editor-content h2 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.75rem; color: #0f172a; margin-top: 2rem; margin-bottom: 1rem; border-left: 4px solid #C5202B; padding-left: 0.75rem; }
+        .editor-content h3 { font-weight: 700; font-size: 1.3rem; color: #0f172a; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .editor-content h4 { font-weight: 700; font-size: 1.1rem; color: #1e293b; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        .editor-content ul { list-style-type: disc; padding-left: 1.75rem; margin-bottom: 1.25rem; }
+        .editor-content ol { list-style-type: decimal; padding-left: 1.75rem; margin-bottom: 1.25rem; }
+        .editor-content li { margin-bottom: 0.35rem; line-height: 1.7; }
+        .editor-content blockquote { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.15rem; color: #334155; background-color: #f8fafc; padding: 1rem 1.5rem; border-left: 4px solid #C5202B; margin: 1.5rem 0; border-radius: 0 0.5rem 0.5rem 0; }
+        .editor-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+        .editor-content th, .editor-content td { border: 1px solid #cbd5e1; padding: 0.6rem 0.9rem; text-align: left; }
+        .editor-content th { background-color: #f1f5f9; font-weight: 700; color: #0f172a; }
+        .editor-content tr:nth-child(even) td { background-color: #f8fafc; }
+        .editor-content code { background-color: #f1f5f9; color: #c5202b; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; font-family: monospace; }
+        .editor-content hr { border: 0; border-top: 1px solid #e2e8f0; margin: 2rem 0; }
+        .editor-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1.5rem auto; display: block; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased">
@@ -156,36 +176,84 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                                 </div>
 
                                 <!-- Formatting Toolbar -->
-                                <div class="px-4 py-2 border-b border-slate-100 flex flex-wrap gap-1 items-center bg-white">
-                                    <div class="flex items-center gap-1 pr-3 border-r border-slate-200">
-                                        <button type="button" onclick="document.execCommand('bold')" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center"><i class="fa-solid fa-bold text-sm"></i></button>
-                                        <button type="button" onclick="document.execCommand('italic')" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center"><i class="fa-solid fa-italic text-sm"></i></button>
-                                        <button type="button" onclick="document.execCommand('underline')" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center"><i class="fa-solid fa-underline text-sm"></i></button>
+                                <div class="px-4 py-2 border-b border-slate-100 flex flex-wrap gap-1.5 items-center bg-white sticky top-0 z-10" id="editorToolbar">
+                                    <!-- Headings / Block Dropdown -->
+                                    <div class="flex items-center gap-1 pr-2 border-r border-slate-200">
+                                        <select id="headingSelect" onchange="formatHeading(this.value)" class="h-8 px-2 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded hover:bg-slate-100 focus:outline-none focus:border-brand-blue cursor-pointer">
+                                            <option value="p">Paragraph</option>
+                                            <option value="h2">Heading 2 (H2)</option>
+                                            <option value="h3">Heading 3 (H3)</option>
+                                            <option value="h4">Heading 4 (H4)</option>
+                                        </select>
                                     </div>
-                                    <div class="flex items-center gap-1 px-3 border-r border-slate-200">
-                                        <button type="button" onclick="document.execCommand('insertUnorderedList')" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fa-solid fa-list-ul"></i></button>
-                                        <button type="button" onclick="document.execCommand('insertOrderedList')" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fa-solid fa-list-ol"></i></button>
+
+                                    <!-- Inline Formatting -->
+                                    <div class="flex items-center gap-1 pr-2 border-r border-slate-200">
+                                        <button type="button" onclick="formatDoc('bold')" title="Bold (Ctrl+B)" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors"><i class="fa-solid fa-bold text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('italic')" title="Italic (Ctrl+I)" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors"><i class="fa-solid fa-italic text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('underline')" title="Underline (Ctrl+U)" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors"><i class="fa-solid fa-underline text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('strikeThrough')" title="Strikethrough" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors"><i class="fa-solid fa-strikethrough text-xs"></i></button>
+                                    </div>
+
+                                    <!-- Alignment -->
+                                    <div class="flex items-center gap-1 pr-2 border-r border-slate-200">
+                                        <button type="button" onclick="formatDoc('justifyLeft')" title="Align Left" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-align-left text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('justifyCenter')" title="Align Center" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-align-center text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('justifyRight')" title="Align Right" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-align-right text-xs"></i></button>
+                                    </div>
+
+                                    <!-- Lists & Quotes -->
+                                    <div class="flex items-center gap-1 pr-2 border-r border-slate-200">
+                                        <button type="button" onclick="formatDoc('insertUnorderedList')" title="Bulleted List" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-list-ul text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('insertOrderedList')" title="Numbered List" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-list-ol text-xs"></i></button>
+                                        <button type="button" onclick="insertBlockquote()" title="Blockquote" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-quote-left text-xs"></i></button>
+                                    </div>
+
+                                    <!-- Link & Guest Post Special Tools -->
+                                    <div class="flex items-center gap-1 pr-2 border-r border-slate-200">
+                                        <button type="button" onclick="openLinkModal()" id="linkBtn" title="Insert / Edit Link (Ctrl+K)" class="h-8 px-2.5 rounded bg-crimson-50 hover:bg-crimson-100 text-crimson-600 font-semibold text-xs flex items-center gap-1.5 transition-colors border border-crimson-200">
+                                            <i class="fa-solid fa-link text-xs"></i> Link
+                                        </button>
+                                        <button type="button" onclick="removeActiveLink()" title="Remove Link" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-link-slash text-xs"></i></button>
+                                    </div>
+
+                                    <!-- Elements: Table, Code, Divider -->
+                                    <div class="flex items-center gap-1 pr-2 border-r border-slate-200">
+                                        <button type="button" onclick="insertTable()" title="Insert Comparison Table" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-table text-xs"></i></button>
+                                        <button type="button" onclick="insertCodeBlock()" title="Inline Code / Snippet" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-code text-xs"></i></button>
+                                        <button type="button" onclick="formatDoc('insertHorizontalRule')" title="Horizontal Divider" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors"><i class="fa-solid fa-minus text-xs"></i></button>
+                                    </div>
+
+                                    <!-- Clean & HTML Toggle -->
+                                    <div class="flex items-center gap-1 ml-auto">
+                                        <button type="button" onclick="cleanFormatting()" title="Clear Dirty Formatting (from Word/Docs)" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-eraser text-xs"></i></button>
+                                        <button type="button" onclick="toggleHtmlMode()" id="htmlModeBtn" title="Toggle Raw HTML / Visual Editor" class="h-8 px-2.5 rounded hover:bg-slate-100 text-slate-600 font-mono text-xs flex items-center gap-1 transition-colors border border-slate-200">
+                                            <i class="fa-solid fa-file-code text-xs"></i> <span id="htmlModeText">HTML</span>
+                                        </button>
                                     </div>
                                 </div>
 
                                 <!-- Content Area -->
-                                <div class="p-6 flex-1 min-h-[400px]">
-                                    <div id="editor" class="w-full h-full text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true">
+                                <div class="p-6 flex-1 min-h-[420px] relative">
+                                    <div id="editor" class="w-full min-h-[380px] text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true">
                                         <?php echo $post['content']; ?>
                                     </div>
+                                    <textarea id="rawHtmlEditor" class="w-full min-h-[380px] p-4 font-mono text-xs text-slate-100 bg-slate-900 rounded-lg outline-none resize-y hidden leading-relaxed" placeholder="Paste or edit raw HTML article content here..."><?php echo htmlspecialchars($post['content']); ?></textarea>
                                 </div>
                                  
-                                 <!-- Bottom Status Bar -->
-                                 <div class="p-3 border-t border-slate-100 bg-slate-50 flex justify-between items-center text-[11px] text-slate-400">
-                                     <div class="flex items-center gap-4">
-                                         <span>Words: <span id="wordCount" class="font-bold text-slate-600">0</span></span>
-                                         <span id="seoWarning" class="transition-all opacity-0"></span>
-                                     </div>
-                                     <div class="flex gap-4">
-                                         <span>Reading Time: <span id="readingTime" class="font-medium text-slate-600">0</span> min</span>
-                                         <span>Status: <span class="font-medium text-slate-600">Ready</span></span>
-                                     </div>
-                                 </div>
+                                <!-- Bottom Status Bar -->
+                                <div class="p-3 border-t border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center text-[11px] text-slate-400 gap-2">
+                                    <div class="flex items-center gap-4">
+                                        <span>Words: <span id="wordCount" class="font-bold text-slate-600">0</span></span>
+                                        <span>Links: <span id="linkCount" class="font-bold text-crimson-600">0</span></span>
+                                        <span>Headings: <span id="headingCount" class="font-bold text-slate-600">0</span></span>
+                                        <span id="seoWarning" class="transition-all opacity-0"></span>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <span>Reading Time: <span id="readingTime" class="font-medium text-slate-600">0</span> min</span>
+                                        <span>Status: <span id="editorStatus" class="font-medium text-slate-600">Ready</span></span>
+                                    </div>
+                                </div>
                              </div>
                         </div>
 
@@ -295,22 +363,106 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         </main>
     </div>
 
+    <!-- Link Modal for Guest Posting / Articles -->
+    <div id="linkModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-crimson-50 text-crimson-600 flex items-center justify-center">
+                        <i class="fa-solid fa-link text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 id="linkModalTitle" class="font-bold text-slate-900 text-sm">Insert Link</h3>
+                        <p class="text-[11px] text-slate-500">Configure anchor text &amp; guest post link attributes</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeLinkModal()" class="w-7 h-7 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="linkModalForm" onsubmit="applyLinkModal(event)" class="p-5 space-y-4">
+                <!-- Target URL -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Destination URL <span class="text-red-500">*</span></label>
+                    <input type="text" id="linkUrlInput" required placeholder="https://example.com/target-page" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-crimson-500 focus:bg-white transition-all font-mono">
+                    <p class="text-[10px] text-slate-400 mt-1">Accepts full URLs (https://...), relative links (/about), or anchor targets (#section)</p>
+                </div>
+
+                <!-- Anchor / Link Text -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Anchor Text (Display Text)</label>
+                    <input type="text" id="linkTextInput" placeholder="Click here or target keyword" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-crimson-500 focus:bg-white transition-all">
+                </div>
+
+                <!-- SEO / Rel Type (Essential for Guest Posting) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">
+                        Link Type &amp; Rel Attribute 
+                        <span class="text-[10px] font-normal text-slate-400">(Guest Posting / SEO)</span>
+                    </label>
+                    <select id="linkRelInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-crimson-500 focus:bg-white font-medium">
+                        <option value="dofollow">Standard / Dofollow (Editorial link)</option>
+                        <option value="nofollow">rel="nofollow" (Standard Nofollow)</option>
+                        <option value="sponsored">rel="sponsored" (Paid Guest Post / Sponsored)</option>
+                        <option value="ugc">rel="ugc" (User-generated content)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 mt-1">Choose <strong>sponsored</strong> for paid client guest posts per Google guidelines</p>
+                </div>
+
+                <!-- Open in new tab -->
+                <div class="flex items-center justify-between py-1 bg-slate-50/70 px-3 rounded-lg border border-slate-100">
+                    <span class="text-xs text-slate-700 font-medium">Open link in new tab</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="linkTargetBlank" checked class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-crimson-600"></div>
+                    </label>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-100">
+                    <button type="button" id="linkModalUnlinkBtn" onclick="removeModalLink()" class="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1.5 rounded hover:bg-red-50 transition-colors hidden items-center gap-1">
+                        <i class="fa-solid fa-link-slash"></i> Remove Link
+                    </button>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button type="button" onclick="closeLinkModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-crimson-600 hover:bg-crimson-700 rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-check"></i> Save Link
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // â”€â”€ Helper: capture editor â†’ submit form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Form submission helper (Syncs Visual & HTML modes) ──────────────────
         function submitPost() {
-            document.getElementById('postContent').value = document.getElementById('editor').innerHTML;
+            const editor = document.getElementById('editor');
+            const rawHtml = document.getElementById('rawHtmlEditor');
+            const contentInput = document.getElementById('postContent');
+            if (isHtmlMode) {
+                editor.innerHTML = rawHtml.value;
+            }
+            contentInput.value = editor.innerHTML;
             document.getElementById('postForm').submit();
         }
 
-        // â”€â”€ Ctrl+S keyboard shortcut â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Keyboard shortcuts ────────────────────────────────────────────────
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 submitPost();
             }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openLinkModal();
+            }
         });
 
-        // â”€â”€ Image Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Image Preview ────────────────────────────────────────────────────
         function previewImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -323,7 +475,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             }
         }
 
-        // â”€â”€ Tag System â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Tag System ───────────────────────────────────────────────────────
         const tagContainer = document.getElementById('tagContainer');
         const tagInput     = document.getElementById('tagInput');
         const hiddenTags   = document.getElementById('hiddenTags');
@@ -365,30 +517,343 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
 
         updateTags();
 
-        // â”€â”€ Word Count & SEO Warning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const editor             = document.getElementById('editor');
+        // ── Editor Formatting Helpers ─────────────────────────────────────────
+        const editor = document.getElementById('editor');
+        const rawHtmlEditor = document.getElementById('rawHtmlEditor');
+        let isHtmlMode = false;
+        let savedRange = null;
+        let activeLinkNode = null;
+
+        function saveSelection() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                savedRange = sel.getRangeAt(0);
+            }
+        }
+
+        function restoreSelection() {
+            if (savedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedRange);
+            }
+        }
+
+        editor.addEventListener('keyup', saveSelection);
+        editor.addEventListener('mouseup', saveSelection);
+        editor.addEventListener('touchend', saveSelection);
+
+        function formatDoc(cmd, value = null) {
+            if (isHtmlMode) return;
+            editor.focus();
+            document.execCommand(cmd, false, value);
+            updateWordCount();
+        }
+
+        function formatHeading(tag) {
+            if (isHtmlMode) return;
+            editor.focus();
+            document.execCommand('formatBlock', false, '<' + tag + '>');
+            updateWordCount();
+        }
+
+        function insertBlockquote() {
+            if (isHtmlMode) return;
+            editor.focus();
+            document.execCommand('formatBlock', false, '<blockquote>');
+            updateWordCount();
+        }
+
+        function insertTable() {
+            if (isHtmlMode) return;
+            editor.focus();
+            const tableHtml = `
+                <table class="w-full border-collapse my-4">
+                    <thead>
+                        <tr>
+                            <th>Item / Feature</th>
+                            <th>Description</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Specification 1</td>
+                            <td>Feature detail description</td>
+                            <td>Verified</td>
+                        </tr>
+                        <tr>
+                            <td>Specification 2</td>
+                            <td>Feature detail description</td>
+                            <td>Verified</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><br></p>
+            `;
+            document.execCommand('insertHTML', false, tableHtml);
+            updateWordCount();
+        }
+
+        function insertCodeBlock() {
+            if (isHtmlMode) return;
+            editor.focus();
+            const sel = window.getSelection();
+            const selectedText = sel ? sel.toString() : '';
+            if (selectedText) {
+                document.execCommand('insertHTML', false, `<code>${selectedText}</code>`);
+            } else {
+                document.execCommand('insertHTML', false, `<code>code_sample</code>&nbsp;`);
+            }
+            updateWordCount();
+        }
+
+        function cleanFormatting() {
+            if (isHtmlMode) return;
+            editor.focus();
+            document.execCommand('removeFormat', false, null);
+            const els = editor.querySelectorAll('*');
+            els.forEach(el => {
+                el.removeAttribute('style');
+                el.removeAttribute('face');
+                el.removeAttribute('size');
+            });
+            updateWordCount();
+        }
+
+        // ── Link Insertion / Editing Logic (Guest Posting Core) ───────────────
+        const linkModal          = document.getElementById('linkModal');
+        const linkModalTitle     = document.getElementById('linkModalTitle');
+        const linkUrlInput       = document.getElementById('linkUrlInput');
+        const linkTextInput      = document.getElementById('linkTextInput');
+        const linkRelInput       = document.getElementById('linkRelInput');
+        const linkTargetBlank    = document.getElementById('linkTargetBlank');
+        const linkModalUnlinkBtn = document.getElementById('linkModalUnlinkBtn');
+
+        function findEnclosingLink() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return null;
+            let node = sel.anchorNode;
+            while (node && node !== editor) {
+                if (node.nodeType === 1 && node.tagName.toLowerCase() === 'a') {
+                    return node;
+                }
+                node = node.parentNode;
+            }
+            return null;
+        }
+
+        function openLinkModal() {
+            if (isHtmlMode) return;
+            saveSelection();
+            activeLinkNode = findEnclosingLink();
+
+            if (activeLinkNode) {
+                linkModalTitle.innerText = 'Edit Link';
+                linkUrlInput.value = activeLinkNode.getAttribute('href') || '';
+                linkTextInput.value = activeLinkNode.textContent || '';
+                linkTargetBlank.checked = activeLinkNode.target === '_blank';
+
+                const rel = (activeLinkNode.getAttribute('rel') || '').toLowerCase();
+                if (rel.includes('sponsored')) {
+                    linkRelInput.value = 'sponsored';
+                } else if (rel.includes('nofollow')) {
+                    linkRelInput.value = 'nofollow';
+                } else if (rel.includes('ugc')) {
+                    linkRelInput.value = 'ugc';
+                } else {
+                    linkRelInput.value = 'dofollow';
+                }
+                linkModalUnlinkBtn.classList.remove('hidden');
+                linkModalUnlinkBtn.classList.add('flex');
+            } else {
+                linkModalTitle.innerText = 'Insert Link';
+                linkUrlInput.value = '';
+                const selectedText = window.getSelection() ? window.getSelection().toString().trim() : '';
+                linkTextInput.value = selectedText;
+                linkTargetBlank.checked = true;
+                linkRelInput.value = 'dofollow';
+                linkModalUnlinkBtn.classList.add('hidden');
+                linkModalUnlinkBtn.classList.remove('flex');
+            }
+
+            linkModal.classList.remove('hidden');
+            setTimeout(() => linkUrlInput.focus(), 50);
+        }
+
+        function closeLinkModal() {
+            linkModal.classList.add('hidden');
+            activeLinkNode = null;
+        }
+
+        function applyLinkModal(e) {
+            e.preventDefault();
+            let url = linkUrlInput.value.trim();
+            if (!url) return;
+
+            if (!url.match(/^https?:\/\//i) && !url.match(/^mailto:/i) && !url.match(/^tel:/i) && !url.startsWith('/') && !url.startsWith('#')) {
+                url = 'https://' + url;
+            }
+
+            const text = linkTextInput.value.trim() || url;
+            const isBlank = linkTargetBlank.checked;
+            const relType = linkRelInput.value;
+
+            let relAttr = '';
+            if (relType === 'sponsored') {
+                relAttr = isBlank ? 'sponsored nofollow noopener' : 'sponsored nofollow';
+            } else if (relType === 'nofollow') {
+                relAttr = isBlank ? 'nofollow noopener' : 'nofollow';
+            } else if (relType === 'ugc') {
+                relAttr = isBlank ? 'ugc noopener' : 'ugc';
+            } else {
+                relAttr = isBlank ? 'noopener' : '';
+            }
+
+            if (activeLinkNode) {
+                activeLinkNode.setAttribute('href', url);
+                activeLinkNode.textContent = text;
+                if (isBlank) {
+                    activeLinkNode.setAttribute('target', '_blank');
+                } else {
+                    activeLinkNode.removeAttribute('target');
+                }
+                if (relAttr) {
+                    activeLinkNode.setAttribute('rel', relAttr);
+                } else {
+                    activeLinkNode.removeAttribute('rel');
+                }
+            } else {
+                restoreSelection();
+                editor.focus();
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.textContent = text;
+                if (isBlank) a.target = '_blank';
+                if (relAttr) a.rel = relAttr;
+
+                if (savedRange && !savedRange.collapsed) {
+                    savedRange.deleteContents();
+                    savedRange.insertNode(a);
+                } else if (savedRange) {
+                    savedRange.insertNode(a);
+                } else {
+                    editor.appendChild(a);
+                }
+
+                const sel = window.getSelection();
+                if (sel) {
+                    const newRange = document.createRange();
+                    newRange.setStartAfter(a);
+                    newRange.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
+                    savedRange = newRange;
+                }
+            }
+
+            closeLinkModal();
+            updateWordCount();
+        }
+
+        function removeModalLink() {
+            if (activeLinkNode) {
+                const textNode = document.createTextNode(activeLinkNode.textContent);
+                activeLinkNode.parentNode.replaceChild(textNode, activeLinkNode);
+            }
+            closeLinkModal();
+            updateWordCount();
+        }
+
+        function removeActiveLink() {
+            if (isHtmlMode) return;
+            const link = findEnclosingLink();
+            if (link) {
+                const textNode = document.createTextNode(link.textContent);
+                link.parentNode.replaceChild(textNode, link);
+            } else {
+                document.execCommand('unlink', false, null);
+            }
+            updateWordCount();
+        }
+
+        editor.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link) {
+                e.preventDefault();
+                activeLinkNode = link;
+                openLinkModal();
+            }
+        });
+
+        // ── Toggle Raw HTML Mode ─────────────────────────────────────────────
+        function toggleHtmlMode() {
+            isHtmlMode = !isHtmlMode;
+            const htmlModeBtn = document.getElementById('htmlModeBtn');
+            const htmlModeText = document.getElementById('htmlModeText');
+            const toolbarButtons = document.querySelectorAll('#editorToolbar button:not(#htmlModeBtn), #headingSelect');
+
+            if (isHtmlMode) {
+                rawHtmlEditor.value = editor.innerHTML;
+                editor.classList.add('hidden');
+                rawHtmlEditor.classList.remove('hidden');
+                htmlModeBtn.classList.add('bg-brand-blue', 'text-white');
+                htmlModeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+                htmlModeText.innerText = 'Visual';
+                toolbarButtons.forEach(btn => { btn.disabled = true; btn.classList.add('opacity-40', 'pointer-events-none'); });
+                rawHtmlEditor.focus();
+            } else {
+                editor.innerHTML = rawHtmlEditor.value;
+                rawHtmlEditor.classList.add('hidden');
+                editor.classList.remove('hidden');
+                htmlModeBtn.classList.remove('bg-brand-blue', 'text-white');
+                htmlModeBtn.classList.add('text-slate-600', 'hover:bg-slate-100');
+                htmlModeText.innerText = 'HTML';
+                toolbarButtons.forEach(btn => { btn.disabled = false; btn.classList.remove('opacity-40', 'pointer-events-none'); });
+                editor.focus();
+                updateWordCount();
+            }
+        }
+
+        rawHtmlEditor.addEventListener('input', function() {
+            updateWordCount();
+        });
+
+        // ── Word Count & SEO Warning ─────────────────────────────────────────
         const wordCountDisplay   = document.getElementById('wordCount');
+        const linkCountDisplay   = document.getElementById('linkCount');
+        const headingCountDisplay= document.getElementById('headingCount');
         const readingTimeDisplay = document.getElementById('readingTime');
         const seoWarning         = document.getElementById('seoWarning');
 
         function updateWordCount() {
-            const text  = editor.innerText || editor.textContent || '';
+            const text  = isHtmlMode ? rawHtmlEditor.value.replace(/<[^>]*>/g, ' ') : (editor.innerText || editor.textContent || '');
             const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-            wordCountDisplay.innerText   = words;
-            readingTimeDisplay.innerText = Math.max(1, Math.ceil(words / 200));
+            if (wordCountDisplay) wordCountDisplay.innerText   = words;
+            if (readingTimeDisplay) readingTimeDisplay.innerText = Math.max(1, Math.ceil(words / 200));
+
+            const currentHtml = isHtmlMode ? rawHtmlEditor.value : editor.innerHTML;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = currentHtml;
+            const links = tempDiv.querySelectorAll('a').length;
+            const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').length;
+
+            if (linkCountDisplay) linkCountDisplay.innerText = links;
+            if (headingCountDisplay) headingCountDisplay.innerText = headings;
 
             if (words === 0) {
                 seoWarning.style.opacity = '0';
             } else if (words < 300) {
-                seoWarning.innerText   = 'âš  Too short for SEO (min 300 words)';
+                seoWarning.innerText   = '⚠ Too short for SEO (min 300 words)';
                 seoWarning.className   = 'text-amber-500 font-medium transition-all';
                 seoWarning.style.opacity = '1';
             } else if (words < 800) {
-                seoWarning.innerText   = 'âœ“ Good â€” 800+ words is even better';
+                seoWarning.innerText   = '✓ Good — 800+ words recommended for guest posts';
                 seoWarning.className   = 'text-blue-500 font-medium transition-all';
                 seoWarning.style.opacity = '1';
             } else {
-                seoWarning.innerText   = 'âœ“ Excellent length for SEO!';
+                seoWarning.innerText   = '✓ Excellent length for SEO!';
                 seoWarning.className   = 'text-emerald-500 font-medium transition-all';
                 seoWarning.style.opacity = '1';
             }
@@ -397,7 +862,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         editor.addEventListener('input', updateWordCount);
         updateWordCount();
 
-        // â”€â”€ Slug generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Slug generation ──────────────────────────────────────────────────
         const postTitle = document.getElementById('postTitle');
         const postSlug  = document.getElementById('postSlug');
 
@@ -417,7 +882,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             }
         }
 
-        // â”€â”€ Validation / Draft Fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Validation / Draft Fallback ──────────────────────────────────────
         const postForm       = document.getElementById('postForm');
         const postStatus     = document.getElementById('postStatus');
         const statusNote     = document.getElementById('statusNote');
@@ -428,7 +893,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         function checkMandatoryFields() {
             const hasTitle    = postTitle && postTitle.value.trim() !== '';
             const hasCategory = categorySelect && categorySelect.value !== '';
-            const hasContent  = editor.innerText.trim() !== '';
+            const hasContent  = (isHtmlMode ? rawHtmlEditor.value.trim() : editor.innerText.trim()) !== '';
             const hasImage    = hasExistingImage || (thumbInput && thumbInput.files.length > 0);
 
             if ((!hasTitle || !hasCategory || !hasContent || !hasImage) && postStatus && postStatus.value === 'Published') {
@@ -447,6 +912,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         if (postStatus) postStatus.addEventListener('change', checkMandatoryFields);
 
         document.getElementById('postForm').addEventListener('submit', function() {
+            if (isHtmlMode) editor.innerHTML = rawHtmlEditor.value;
             document.getElementById('postContent').value = editor.innerHTML;
         });
 
