@@ -36,6 +36,11 @@
                 </a>
             </li>
             <li>
+                <a href="analytics_dashboard.php" class="sidebar-link <?php echo (basename($_SERVER['PHP_SELF']) == 'analytics_dashboard.php') ? 'active' : 'text-slate-300'; ?> flex items-center gap-3 px-6 py-3 text-sm font-medium">
+                    <i class="fa-solid fa-chart-line text-slate-400 w-5"></i> Analytics
+                </a>
+            </li>
+            <li>
                 <a href="posts.php" class="sidebar-link <?php echo (in_array(basename($_SERVER['PHP_SELF']), ['posts.php', 'edit-post.php'])) ? 'active' : 'text-slate-300'; ?> flex items-center gap-3 px-6 py-3 text-sm font-medium">
                     <i class="fa-solid fa-file-lines text-slate-400 w-5"></i> Blog Posts
                 </a>

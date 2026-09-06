@@ -84,6 +84,9 @@ if (!$session->logged_in) {
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2.5">
+                        <a href="analytics_dashboard.php" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-all text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line"></i> Analytics Dashboard
+                        </a>
                         <a href="/" target="_blank" class="bg-white border border-slate-200 text-[#0B1F3A] hover:bg-slate-50 font-semibold py-2 px-4 rounded-lg shadow-sm transition-all text-xs flex items-center gap-2">
                             <i class="fa-solid fa-globe text-crimson-600"></i> View Live Site
                         </a>
@@ -164,7 +167,9 @@ if (!$session->logged_in) {
                         </div>
                         <div class="text-[11px] font-medium flex items-center justify-between text-slate-500 pt-2 border-t border-slate-50">
                             <span>Article engagement</span>
-                            <span class="text-crimson-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> Growing</span>
+                            <a href="analytics_dashboard.php" class="text-crimson-600 font-bold hover:underline flex items-center gap-1">
+                                Full Analytics <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                            </a>
                         </div>
                     </div>
 
@@ -188,7 +193,13 @@ if (!$session->logged_in) {
                 </div>
 
                 <!-- ── Action Shortcuts Grid ───────────────────────────────── -->
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-8">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+                    <a href="analytics_dashboard.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-indigo-600 hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-chart-line text-sm"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700">Analytics</span>
+                    </a>
                     <a href="create-post.php" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:border-[#C5202B] hover:shadow-md transition-all group">
                         <div class="w-10 h-10 rounded-full bg-crimson-50 text-crimson-600 flex items-center justify-center group-hover:bg-[#C5202B] group-hover:text-white transition-colors">
                             <i class="fa-solid fa-pen-nib text-sm"></i>
@@ -225,6 +236,25 @@ if (!$session->logged_in) {
                         </div>
                         <span class="text-[11px] font-bold text-slate-700">Settings</span>
                     </a>
+                </div>
+
+                <!-- ── Analytics Quick Insight Banner ─────────────────────── -->
+                <div class="mb-8 bg-gradient-to-r from-[#0B1F3A] via-[#15233e] to-[#1e1e3b] rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 border border-white/10 relative overflow-hidden">
+                    <div class="relative z-10 max-w-xl">
+                        <div class="inline-flex items-center gap-2 bg-indigo-500/20 border border-indigo-400/30 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2">
+                            <i class="fa-solid fa-chart-pie text-xs"></i> Analytics &amp; Traffic Intelligence
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold font-serif text-white">Full Analytics Dashboard</h3>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                            Monitor 30-day traffic velocity, readership breakdown by category, draft-to-published ratios, comments activity, and overall SEO health score.
+                        </p>
+                    </div>
+                    <div class="relative z-10 flex items-center gap-3 shrink-0">
+                        <a href="analytics_dashboard.php" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line"></i> Launch Analytics &rarr;
+                        </a>
+                    </div>
+                    <div class="absolute -right-8 -bottom-8 w-44 h-44 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
                 </div>
 
                 <!-- ── Two-Column Main Content ─────────────────────────────── -->

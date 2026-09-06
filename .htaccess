@@ -125,7 +125,12 @@ Options -Indexes
     RewriteRule ^category/9(?:/.*)?$ /category/4/sports [R=301,L]
     RewriteRule ^category/([0-9]+)(?:/([a-zA-Z0-9_-]*))?/?$ category.php?id=$1&slug=$2 [L,QSA]
 
-    # 5. Extensionless PHP files (e.g. /about -> about.php, /contact -> contact.php)
+    # 5. Clean routes for Analytics & Dashboard
+    RewriteRule ^analytics/?$ analytics_dashboard.php [L,QSA]
+    RewriteRule ^analytics-dashboard/?$ analytics_dashboard.php [L,QSA]
+    RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+
+    # 6. Extensionless PHP files (e.g. /about -> about.php, /contact -> contact.php)
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME}.php -f
     RewriteRule ^(.*)$ $1.php [L,QSA]
