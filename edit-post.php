@@ -617,14 +617,19 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         // ── Editor Formatting Helpers ─────────────────────────────────────────
         const editor = document.getElementById('editor');
         const rawHtmlEditor = document.getElementById('rawHtmlEditor');
+        const editorToolbar = document.getElementById('editorToolbar');
         let isHtmlMode = false;
         let savedRange = null;
         let activeLinkNode = null;
+        let selectedTextOnModalOpen = '';
 
         function saveSelection() {
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
-                savedRange = sel.getRangeAt(0);
+                const range = sel.getRangeAt(0);
+                if (editor.contains(range.commonAncestorContainer) || editor === range.commonAncestorContainer) {
+                    savedRange = range.cloneRange();
+                }
             }
         }
 
@@ -639,6 +644,55 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
         editor.addEventListener('keyup', saveSelection);
         editor.addEventListener('mouseup', saveSelection);
         editor.addEventListener('touchend', saveSelection);
+        document.addEventListener('selectionchange', function() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && (editor.contains(sel.anchorNode) || editor === sel.anchorNode)) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+        });
+
+        // Prevent toolbar buttons from stealing focus & collapsing selection
+        if (editorToolbar) {
+            editorToolbar.addEventListener('mousedown', function(e) {
+                if (e.target.closest('button, select')) {
+                    saveSelection();
+                    if (e.target.closest('button')) {
+                        e.preventDefault();
+                    }
+                }
+            });
+        }
+
+        // Clean & sanitize pasted content (e.g. from ChatGPT or Google Docs)
+        editor.addEventListener('paste', function(e) {
+            const html = e.clipboardData ? e.clipboardData.getData('text/html') : '';
+            if (html) {
+                e.preventDefault();
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Strip disruptive styles from ChatGPT (dark backgrounds, fixed fonts, etc.)
+                    const all = doc.body.querySelectorAll('*');
+                    all.forEach(el => {
+                        el.style.backgroundColor = '';
+                        el.style.color = '';
+                        el.style.fontFamily = '';
+                        el.removeAttribute('face');
+                        el.removeAttribute('size');
+                        if (el.tagName === 'BUTTON' || el.tagName === 'SVG') {
+                            el.remove();
+                        }
+                    });
+
+                    document.execCommand('insertHTML', false, doc.body.innerHTML);
+                } catch(err) {
+                    const text = e.clipboardData.getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                }
+                updateWordCount();
+            }
+        });
 
         function formatDoc(cmd, value = null) {
             if (isHtmlMode) return;
@@ -742,13 +796,20 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
 
         function openLinkModal() {
             if (isHtmlMode) return;
-            saveSelection();
+
+            // Prioritize active selection in editor
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && (editor.contains(sel.anchorNode) || editor === sel.anchorNode)) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+
             activeLinkNode = findEnclosingLink();
 
             if (activeLinkNode) {
                 linkModalTitle.innerText = 'Edit Link';
                 linkUrlInput.value = activeLinkNode.getAttribute('href') || '';
                 linkTextInput.value = activeLinkNode.textContent || '';
+                selectedTextOnModalOpen = linkTextInput.value;
                 linkTargetBlank.checked = activeLinkNode.target === '_blank';
 
                 const rel = (activeLinkNode.getAttribute('rel') || '').toLowerCase();
@@ -766,7 +827,14 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             } else {
                 linkModalTitle.innerText = 'Insert Link';
                 linkUrlInput.value = '';
-                const selectedText = window.getSelection() ? window.getSelection().toString().trim() : '';
+                
+                let selectedText = '';
+                if (savedRange && !savedRange.collapsed) {
+                    selectedText = savedRange.toString().trim();
+                } else if (sel) {
+                    selectedText = sel.toString().trim();
+                }
+                selectedTextOnModalOpen = selectedText;
                 linkTextInput.value = selectedText;
                 linkTargetBlank.checked = true;
                 linkRelInput.value = 'dofollow';
@@ -775,7 +843,10 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             }
 
             linkModal.classList.remove('hidden');
-            setTimeout(() => linkUrlInput.focus(), 50);
+            setTimeout(() => {
+                linkUrlInput.focus();
+                linkUrlInput.select();
+            }, 60);
         }
 
         function closeLinkModal() {
@@ -792,7 +863,7 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                 url = 'https://' + url;
             }
 
-            const text = linkTextInput.value.trim() || url;
+            const text = linkTextInput.value.trim();
             const isBlank = linkTargetBlank.checked;
             const relType = linkRelInput.value;
 
@@ -808,8 +879,9 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
             }
 
             if (activeLinkNode) {
+                // Editing existing link
                 activeLinkNode.setAttribute('href', url);
-                activeLinkNode.textContent = text;
+                if (text) activeLinkNode.textContent = text;
                 if (isBlank) {
                     activeLinkNode.setAttribute('target', '_blank');
                 } else {
@@ -821,32 +893,68 @@ if ($session->userlevel < 4 && $post['author'] != $session->userinfo['registrati
                     activeLinkNode.removeAttribute('rel');
                 }
             } else {
+                // Inserting new link on selected word/sentence or at caret
                 restoreSelection();
                 editor.focus();
 
-                const a = document.createElement('a');
-                a.href = url;
-                a.textContent = text;
-                if (isBlank) a.target = '_blank';
-                if (relAttr) a.rel = relAttr;
-
                 if (savedRange && !savedRange.collapsed) {
-                    savedRange.deleteContents();
-                    savedRange.insertNode(a);
-                } else if (savedRange) {
-                    savedRange.insertNode(a);
-                } else {
-                    editor.appendChild(a);
-                }
-
-                const sel = window.getSelection();
-                if (sel) {
-                    const newRange = document.createRange();
-                    newRange.setStartAfter(a);
-                    newRange.collapse(true);
+                    const sel = window.getSelection();
                     sel.removeAllRanges();
-                    sel.addRange(newRange);
-                    savedRange = newRange;
+                    sel.addRange(savedRange);
+
+                    // Use execCommand createLink with a temporary unique token to safely wrap selection
+                    const tempToken = 'https://__bk_link_' + Date.now() + '__/';
+                    document.execCommand('createLink', false, tempToken);
+
+                    // Configure all generated anchor tags
+                    const createdLinks = editor.querySelectorAll(`a[href="${tempToken}"]`);
+                    if (createdLinks.length > 0) {
+                        createdLinks.forEach(a => {
+                            a.setAttribute('href', url);
+                            if (isBlank) a.setAttribute('target', '_blank'); else a.removeAttribute('target');
+                            if (relAttr) a.setAttribute('rel', relAttr); else a.removeAttribute('rel');
+                            if (createdLinks.length === 1 && text && text !== selectedTextOnModalOpen) {
+                                a.textContent = text;
+                            }
+                        });
+                    } else {
+                        // Fallback insertion
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.textContent = text || savedRange.toString() || url;
+                        if (isBlank) a.target = '_blank';
+                        if (relAttr) a.setAttribute('rel', relAttr);
+                        try {
+                            savedRange.deleteContents();
+                            savedRange.insertNode(a);
+                        } catch(err) {
+                            editor.appendChild(a);
+                        }
+                    }
+                } else {
+                    // Caret is collapsed (no text selected) -> insert new link
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.textContent = text || url;
+                    if (isBlank) a.target = '_blank';
+                    if (relAttr) a.setAttribute('rel', relAttr);
+
+                    if (savedRange) {
+                        savedRange.insertNode(a);
+                    } else {
+                        editor.appendChild(a);
+                    }
+
+                    // Move caret after inserted link
+                    const sel = window.getSelection();
+                    if (sel) {
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(a);
+                        newRange.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
+                        savedRange = newRange.cloneRange();
+                    }
                 }
             }
 

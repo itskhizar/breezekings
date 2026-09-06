@@ -488,6 +488,11 @@ $_more_cats = array_slice($_all_cats, 5);
                         <span class="text-xs text-white font-bold hidden xl:inline normal-case"><?= htmlspecialchars($user_chip_name) ?></span>
                     </a>
                 </div>
+            <?php else: ?>
+                <a href="/login.php" class="bk-login-btn" aria-label="Sign In">
+                    <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+                    <span>Login</span>
+                </a>
             <?php endif; ?>
 
             <!-- Mobile Hamburger -->
@@ -545,6 +550,8 @@ $_more_cats = array_slice($_all_cats, 5);
     <?php if ($session->logged_in && $session->username != GUEST_NAME): ?>
     <a href="/dashboard" class="bk-mobile-link" style="color:#60a5fa;"><i class="fa-solid fa-gauge"></i> Dashboard</a>
     <a href="/process?logout=1" class="bk-mobile-link" style="color:#f87171;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    <?php else: ?>
+    <a href="/login.php" class="bk-mobile-link" style="color:#38bdf8;"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login / Sign In</a>
     <?php endif; ?>
 
     <!-- Mobile Contact CTA -->
