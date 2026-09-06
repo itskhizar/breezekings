@@ -350,9 +350,10 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                 <section class="mb-12" aria-label="Featured post">
                     <?php
                     // Try featured flag first, fall back to latest
-                    $featured_sql = "SELECT p.*, c.category
+                    $featured_sql = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name
                                      FROM posts p
                                      LEFT JOIN categories c ON p.category_id = c.id
+                                     LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
                                      WHERE p.status = 'Published'
                                        AND p.is_deleted = 0
                                        AND p.is_featured = 1
@@ -361,9 +362,10 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     $featured_posts = $database->query($featured_sql);
                     if (mysqli_num_rows($featured_posts) === 0) {
                         $featured_posts = $database->query(
-                            "SELECT p.*, c.category
+                            "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name
                              FROM posts p
                              LEFT JOIN categories c ON p.category_id = c.id
+                             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
                              WHERE p.status = 'Published' AND p.is_deleted = 0
                              ORDER BY p.created_at DESC LIMIT 1"
                         );
@@ -374,7 +376,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $hero_date_fmt = date('M d, Y', strtotime($hero['created_at']));
                         $hero_iso = date('c', strtotime($hero['created_at']));
                         $hero_read = $database->getReadingTime($hero['content']);
-                        $hero_author = htmlspecialchars($hero['author'] ?? 'Admin');
+                        $hero_author = htmlspecialchars($hero['author_name'] ?? $hero['author'] ?? 'Admin');
                         $hero_cat = htmlspecialchars($hero['category'] ?? '');
                         $hero_title = htmlspecialchars($hero['title']);
                         $hero_excerpt = htmlspecialchars($hero['excerpt'] ?? substr(strip_tags($hero['content']), 0, 180) . '…');
@@ -445,7 +447,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                             itemtype="https://schema.org/Person">
                                             <img src="<?php echo bk_avatar_url('', $hero_author); ?>" class="w-6 h-6 rounded-full border border-white/20 object-cover"
                                                 alt="<?php echo $hero_author; ?>" width="24" height="24" onerror="this.src='/images/avatar.png'">
-                                            <span itemprop="name">BY <?php echo strtoupper($hero_author); ?></span>
+                                            <span itemprop="name">BY <?php echo htmlspecialchars($hero_author); ?></span>
                                         </div>
                                         <span class="opacity-30" aria-hidden="true">|</span>
                                         <time datetime="<?php echo $hero_iso; ?>"

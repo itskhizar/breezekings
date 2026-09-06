@@ -52,9 +52,10 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 if ($db_conn) {
     $feed_query = @mysqli_query(
         $db_conn,
-        "SELECT p.*, c.category 
+        "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name 
          FROM posts p 
          LEFT JOIN categories c ON p.category_id = c.id 
+         LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
          WHERE p.status = 'Published' AND p.is_deleted = 0 
          ORDER BY p.created_at DESC 
          LIMIT 30"
@@ -62,8 +63,8 @@ if ($db_conn) {
 
     if ($feed_query) {
         while ($post = mysqli_fetch_assoc($feed_query)) {
-            $post_url = $site_url . bk_post_url($post['id'], $post['title'], $post['slug']);
-            $author = !empty($post['author']) ? $post['author'] : 'Breezekings Editorial';
+            $post_url = $site_url . bk_post_url($post);
+            $author = !empty($post['author_name']) ? $post['author_name'] : (!empty($post['author']) ? $post['author'] : 'Breezekings Editorial');
             $category = !empty($post['category']) ? $post['category'] : 'General';
             $pub_date = date(DATE_RSS, strtotime($post['created_at']));
             $desc = !empty($post['meta_description']) ? $post['meta_description'] : substr(strip_tags($post['content']), 0, 280) . '…';

@@ -469,9 +469,14 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                         <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-20 h-20 rounded-full object-cover shrink-0 border-4 border-slate-50" onerror="this.src='/images/avatar.png'">
                         <div class="flex-1">
                             <p class="text-[10px] font-bold uppercase tracking-widest text-crimson-600 mb-1">Article Author</p>
-                            <h4 class="text-lg font-serif font-bold text-navy-900 mb-3"><?php echo htmlspecialchars($author_name); ?></h4>
+                            <h4 class="text-lg font-serif font-bold text-navy-900 mb-1.5"><?php echo htmlspecialchars($author_name); ?></h4>
+                            <?php if (!empty($author_info['bio'])): ?>
+                                <p class="text-xs text-slate-600 leading-relaxed mb-3.5"><?php echo nl2br(htmlspecialchars($author_info['bio'])); ?></p>
+                            <?php else: ?>
+                                <p class="text-xs text-slate-500 leading-relaxed mb-3.5">Contributing writer and editor at Breezekings, specializing in technology, culture, and in-depth analytical reporting.</p>
+                            <?php endif; ?>
                             <div class="flex gap-4">
-                                <a href="mailto:azamwaseem44@gmail.com" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors flex items-center gap-1.5">
+                                <a href="mailto:<?php echo htmlspecialchars(!empty($author_info['email']) ? $author_info['email'] : 'contact@breezekings.com'); ?>" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors flex items-center gap-1.5">
                                     <i class="fa-solid fa-envelope text-xs"></i> Contact Author
                                 </a>
                                 <a href="/about" class="text-[10px] font-bold text-navy-900 hover:text-crimson-600 uppercase tracking-widest transition-colors flex items-center gap-1.5">
@@ -484,8 +489,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                     <!-- Related Articles in Category -->
                     <?php
                     $cat_id_num = (int)$post['category_id'];
-                    $cur_post_id = (int)$post['id'];
-                    $related_query = $database->query("SELECT p.*, c.category FROM posts p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = $cat_id_num AND p.id != $cur_post_id AND p.status = 'Published' AND p.is_deleted = 0 ORDER BY p.id DESC LIMIT 3");
+                    $related_query = $database->get_related_posts($cat_id_num, $cur_post_id, 3);
                     if ($related_query && mysqli_num_rows($related_query) > 0) {
                     ?>
                     <section class="mt-14 pt-12 border-t border-slate-200">
