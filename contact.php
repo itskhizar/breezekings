@@ -22,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
     if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || empty($message)) {
         $msg_status = 'error';
     } else {
-        // Optional mail dispatch or logging
-        @mail("azamwaseem44@gmail.com", "Breezekings Contact: " . ($subject ?: "General Inquiry"), "Name: $name\nEmail: $email\n\nMessage:\n$message", "From: no-reply@breezekings.com\r\nReply-To: $email");
-        $msg_status = 'success';
+        // Send via PHPMailer (falls back to PHP mail() automatically)
+        $sent = $mailer->sendContactForm($name, $email, $subject, $message);
+        $msg_status = $sent ? 'success' : 'error';
     }
 }
 ?>

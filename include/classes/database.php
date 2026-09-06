@@ -128,10 +128,8 @@ class MySQLDB
          }
       }
 
-      // Standardize real author bylines
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Breezekings Editorial Team' WHERE (`registration_no` = 'FN-admin' OR `username` = 'admin') AND (`display_name` = 'Admin' OR `display_name` IS NULL OR `display_name` = '')");
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `registration_no` = 'AUTH-1024' AND (`display_name` = 'KHIZAR AHMAD' OR `display_name` IS NULL)");
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Waseem Azam' WHERE `registration_no` = 'AUTH-1026'");
+      // One-time migration: populate display_name only when it is NULL/empty (never overwrite user-set names)
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = username WHERE (`display_name` IS NULL OR `display_name` = '' OR `display_name` = 'Admin')");
    }
 
    function generateExcerpt($content, $length = 160)

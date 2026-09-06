@@ -1,0 +1,14 @@
+{
+    "name": "breezekings/blog",
+    "description": "Breezekings Blog",
+    "type": "project",
+    "authors": [
+        {
+            "name": "itskhizar",
+            "email": "devworkspace3300@gmail.com"
+        }
+    ],
+    "require": {
+        "phpmailer/phpmailer": "^7.1"
+    }
+}

@@ -60,8 +60,19 @@ define("COOKIE_EXPIRE", 60 * 60 * 24);  //now for 1 day
 define("COOKIE_PATH", "/");  //Avaible in whole domain
 
 
-define("EMAIL_FROM_NAME", "ARMAN G. DE CASTRO");
-define("EMAIL_FROM_ADDR", "armandecastro@gmail.com");
+// Site identity
+if (!defined('SITE_NAME'))   define('SITE_NAME',   'Breezekings');
+if (!defined('ADMIN_EMAIL')) define('ADMIN_EMAIL', 'azamwaseem44@gmail.com');
+
+// SMTP mailer settings (override via config.local.php on the server)
+if (!defined('SMTP_HOST')) define('SMTP_HOST', 'smtp.gmail.com');
+if (!defined('SMTP_PORT')) define('SMTP_PORT', 587);
+if (!defined('SMTP_USER')) define('SMTP_USER', 'azamwaseem44@gmail.com');
+if (!defined('SMTP_PASS')) define('SMTP_PASS', '');      // Set in config.local.php
+if (!defined('SMTP_FROM')) define('SMTP_FROM', 'azamwaseem44@gmail.com');
+
+define("EMAIL_FROM_NAME", "Breezekings");
+define("EMAIL_FROM_ADDR", "azamwaseem44@gmail.com");
 define("EMAIL_WELCOME", false);
 
 

@@ -11,7 +11,7 @@ if (!$session->logged_in) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Settings | BlogAdmin</title>
+    <title>Profile Settings | Breezekings Admin</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -151,8 +151,9 @@ if (!$session->logged_in) {
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-500 mb-2">Full Name</label>
-                                        <input type="text" name="displayname" class="w-full bg-white border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors" value="<?php echo htmlspecialchars($session->userinfo['display_name'] ?? ''); ?>">
+                                        <label class="block text-xs font-semibold text-slate-500 mb-2">Display Name <span class="text-slate-400 font-normal normal-case">(shown on articles & author bylines)</span></label>
+                                        <input type="text" name="displayname" class="w-full bg-white border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-brand-blue transition-colors" value="<?php echo htmlspecialchars($session->userinfo['display_name'] ?? ''); ?>" placeholder="Your full name">
+                                        <p class="text-[11px] text-slate-400 mt-1.5">This name appears publicly on all articles you publish.</p>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-500 mb-2">Email Address</label>
@@ -312,7 +313,7 @@ if (!$session->logged_in) {
             
             <!-- Footer -->
             <footer class="bg-[#f4f7f6] border-t border-slate-200 py-4 px-6 md:px-8 text-xs font-medium flex justify-between mt-auto">
-                <p class="text-slate-400">&copy; <?php echo date('Y'); ?> BlogAdmin Management Suite. All rights reserved.</p>
+                <p class="text-slate-400">&copy; <?php echo date('Y'); ?> Breezekings Admin. All rights reserved.</p>
                 <div class="flex gap-4">
                     <a href="#" class="text-slate-400 hover:text-brand-blue">Privacy Policy</a>
                     <a href="#" class="text-slate-400 hover:text-brand-blue">Terms of Service</a>

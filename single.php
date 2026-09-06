@@ -346,12 +346,10 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
 
                     <!-- Author Box -->
                     <div class="mt-16 bg-white border border-slate-200 rounded-lg p-8 flex flex-col sm:flex-row gap-8 items-start shadow-sm">
-                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-24 h-24 rounded-full object-cover shrink-0 border-4 border-slate-50" onerror="this.src='/images/avatar.png'">
-                        <div>
-                            <h4 class="text-xl font-serif font-bold text-navy-900 mb-2">About <?php echo htmlspecialchars($author_name); ?></h4>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-4">
-                                <?php echo htmlspecialchars($author_name); ?> is a senior editorial contributor at Breezekings, writing rigorous analysis and practical insights across technology, culture, and modern business.
-                            </p>
+                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-20 h-20 rounded-full object-cover shrink-0 border-4 border-slate-50" onerror="this.src='/images/avatar.png'">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-crimson-600 mb-1">Article Author</p>
+                            <h4 class="text-lg font-serif font-bold text-navy-900 mb-3"><?php echo htmlspecialchars($author_name); ?></h4>
                             <div class="flex gap-4">
                                 <a href="mailto:azamwaseem44@gmail.com" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors flex items-center gap-1.5">
                                     <i class="fa-solid fa-envelope text-xs"></i> Contact Author
