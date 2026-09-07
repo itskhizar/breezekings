@@ -1,0 +1,12 @@
+# Google Disavow File for Breezekings.com
+# Use this file with the Google Disavow Links tool:
+# https://search.google.com/search-console/disavow-links
+#
+# Format:
+# To disavow an entire domain: domain:example.com
+# To disavow a specific page: https://example.com/spam-page.html
+
+# Examples of low-quality or spammy linking domains identified from the legacy 2017 content-mill era:
+# domain:spammy-directory-example.com
+# domain:link-farm-network-example.net
+# domain:auto-content-scraper-example.org

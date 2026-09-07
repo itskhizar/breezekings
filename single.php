@@ -73,7 +73,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
     $site_url_s    = bk_base_url();
     $canonical_url = $site_url_s . $clean_post_rel;
     $og_img_s      = !empty($post['featured_image']) ? $site_url_s . '/images/posts/' . $post['featured_image'] : $site_url_s . '/images/breezekings-icon-red.svg';
-    $post_desc     = htmlspecialchars($post['meta_description'] ?: substr(strip_tags($post['content']), 0, 160));
+    $post_desc     = htmlspecialchars(bk_clean_text($post['meta_description'] ?: substr(strip_tags($post['content']), 0, 160)));
     $post_title    = htmlspecialchars($post['title']);
     $post_author   = htmlspecialchars($author_name);
     $category_name = htmlspecialchars($post['category'] ?? 'General');
@@ -464,7 +464,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                 <main class="lg:w-[70%] flex-1">
                     
                     <div class="article-content max-w-4xl mx-auto">
-                        <?php echo $post['content']; ?>
+                        <?php echo bk_clean_text($post['content']); ?>
                     </div>
                         
 

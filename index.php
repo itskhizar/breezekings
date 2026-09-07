@@ -229,41 +229,6 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
         }
 
 
-        /* ── Pagination ────────────────────────────────────────── */
-        .pag-btn {
-            width: 2.25rem;
-            height: 2.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: .375rem;
-            border: 1px solid #e2e8f0;
-            font-size: .8125rem;
-            font-weight: 500;
-            background: #fff;
-            color: #475569;
-            transition: all .2s;
-        }
-
-        .pag-btn:hover {
-            border-color: #c5202b;
-            color: #c5202b;
-        }
-
-        .pag-btn.active {
-            background: #c5202b;
-            border-color: #c5202b;
-            color: #fff;
-        }
-
-        .pag-btn.arrow {
-            color: #94a3b8;
-        }
-
-        .pag-btn.arrow:hover {
-            color: #c5202b;
-        }
-
         /* ── Popular / trending numbered item ──────────────────── */
         .pop-num {
             font-size: 1.625rem;
@@ -350,7 +315,14 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                 <section class="mb-12" aria-label="Featured post">
                     <?php
                     // Try featured flag first, fall back to latest
-                    $featured_sql = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name
+                    $featured_sql = "SELECT p.*, c.category, 
+                                     CASE 
+                                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                                         WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                                         ELSE 'Khizar Ahmad'
+                                     END as author_name,
+                                     u.profile_image as author_avatar
                                      FROM posts p
                                      LEFT JOIN categories c ON p.category_id = c.id
                                      LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
@@ -362,7 +334,14 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     $featured_posts = $database->query($featured_sql);
                     if (mysqli_num_rows($featured_posts) === 0) {
                         $featured_posts = $database->query(
-                            "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name
+                            "SELECT p.*, c.category, 
+                             CASE 
+                                 WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                                 WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                                 WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                                 ELSE 'Khizar Ahmad'
+                             END as author_name,
+                             u.profile_image as author_avatar
                              FROM posts p
                              LEFT JOIN categories c ON p.category_id = c.id
                              LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
@@ -376,10 +355,12 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $hero_date_fmt = date('M d, Y', strtotime($hero['created_at']));
                         $hero_iso = date('c', strtotime($hero['created_at']));
                         $hero_read = $database->getReadingTime($hero['content']);
-                        $hero_author = htmlspecialchars($hero['author_name'] ?? $hero['author'] ?? 'Admin');
+                        $hero_author = htmlspecialchars((!empty($hero['author_name']) && strcasecmp($hero['author_name'], 'Admin') !== 0) ? $hero['author_name'] : 'Khizar Ahmad');
+                        $hero_avatar = bk_avatar_url($hero['author_avatar'] ?? null, $hero_author);
                         $hero_cat = htmlspecialchars($hero['category'] ?? '');
                         $hero_title = htmlspecialchars($hero['title']);
-                        $hero_excerpt = htmlspecialchars($hero['excerpt'] ?? substr(strip_tags($hero['content']), 0, 180) . '…');
+                        $raw_hero_excerpt = !empty($hero['excerpt']) ? $hero['excerpt'] : substr(strip_tags($hero['content']), 0, 180) . '…';
+                        $hero_excerpt = htmlspecialchars(bk_clean_text($raw_hero_excerpt));
                         $hero_url = bk_post_url($hero);
                         ?>
                         <!-- Schema: Article (hero) -->
@@ -445,7 +426,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                         class="flex flex-wrap items-center gap-3 text-slate-400 text-[11px] font-bold tracking-widest uppercase">
                                         <div class="flex items-center gap-2" itemprop="author" itemscope
                                             itemtype="https://schema.org/Person">
-                                            <img src="<?php echo bk_avatar_url('', $hero_author); ?>" class="w-6 h-6 rounded-full border border-white/20 object-cover"
+                                            <img src="<?php echo $hero_avatar; ?>" class="w-6 h-6 rounded-full border border-white/20 object-cover"
                                                 alt="<?php echo $hero_author; ?>" width="24" height="24" onerror="this.src='/images/avatar.png'">
                                             <span itemprop="name">BY <?php echo htmlspecialchars($hero_author); ?></span>
                                         </div>
@@ -485,7 +466,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         <h2 class="text-xl lg:text-2xl font-serif font-bold text-navy-900 section-title">
                             Latest Articles
                         </h2>
-                        <a href="blog.php"
+                        <a href="#main-content"
                             class="text-[11px] font-bold text-crimson-600 hover:text-crimson-700 uppercase tracking-widest flex items-center gap-1 transition-colors">
                             View All <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
                         </a>
@@ -511,10 +492,12 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                             $read_time = $database->getReadingTime($post['content']);
                             $cat_name = htmlspecialchars($post['category'] ?? 'General');
                             $post_title = htmlspecialchars($post['title']);
-                            $excerpt = !empty($post['excerpt'])
-                                ? htmlspecialchars($post['excerpt'])
-                                : htmlspecialchars(substr(strip_tags($post['content']), 0, 150)) . '…';
-                            $author_name = htmlspecialchars($post['author_name'] ?? $post['author'] ?? 'Admin');
+                            $raw_post_excerpt = !empty($post['excerpt'])
+                                ? $post['excerpt']
+                                : substr(strip_tags($post['content']), 0, 150) . '…';
+                            $excerpt = htmlspecialchars(bk_clean_text($raw_post_excerpt));
+                            $author_name = htmlspecialchars((!empty($post['author_name']) && strcasecmp($post['author_name'], 'Admin') !== 0) ? $post['author_name'] : 'Khizar Ahmad');
+                            $author_avatar = bk_avatar_url($post['author_avatar'] ?? null, $author_name);
                             $post_url = bk_post_url($post);
                             $cat_url = bk_category_url($post['category_id'], $post['category'] ?? 'General');
                             ?>
@@ -557,10 +540,10 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                     <!-- Meta row -->
                                     <div class="flex items-center justify-between pt-4 border-t border-slate-100">
                                         <div class="flex items-center gap-2">
-                                            <div
-                                                class="w-6 h-6 rounded-full bg-navy-900 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
-                                                <?php echo strtoupper(substr($author_name, 0, 1)); ?>
-                                            </div>
+                                            <img src="<?php echo $author_avatar; ?>" 
+                                                 alt="<?php echo $author_name; ?>" 
+                                                 class="w-6 h-6 rounded-full border border-slate-200 object-cover flex-shrink-0" 
+                                                 width="24" height="24" onerror="this.src='/images/avatar.png'">
                                             <span class="text-[11px] text-slate-600 font-medium normal-case tracking-normal"
                                                 itemprop="author" itemscope itemtype="https://schema.org/Person">
                                                 <span itemprop="name"><?php echo $author_name; ?></span>
@@ -622,7 +605,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     if ($tr = mysqli_fetch_assoc($top_read)):
                         $tr_thumb = bk_thumb_url($tr['featured_image']);
                         $tr_title = htmlspecialchars($tr['title']);
-                        $tr_excerpt = htmlspecialchars($tr['excerpt'] ?? substr(strip_tags($tr['content']), 0, 120));
+                        $tr_excerpt = htmlspecialchars(bk_clean_text($tr['excerpt'] ?? substr(strip_tags($tr['content']), 0, 120)));
                         $tr_url = bk_post_url($tr);
                         ?>
                         <div class="bg-navy-950 rounded-xl overflow-hidden shadow-xl border border-white/5 group">

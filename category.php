@@ -247,18 +247,22 @@ $cat_meta_desc  = htmlspecialchars(bk_category_meta_description($category_name))
                                     <span class="text-[11px] text-slate-500 font-medium"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></span>
                                     <span class="text-[11px] text-slate-300">&bull;</span>
                                     <span class="text-[11px] text-slate-600 font-medium normal-case flex items-center gap-1.5">
-                                        <i class="fa-regular fa-user text-[10px] text-slate-400"></i>
                                         <?php 
                                         $display_author = (!empty($post['author_name']) && strcasecmp($post['author_name'], 'Admin') !== 0) ? $post['author_name'] : 'Khizar Ahmad';
-                                        echo htmlspecialchars($display_author); 
+                                        $display_avatar = bk_avatar_url($post['author_avatar'] ?? null, $display_author);
                                         ?>
+                                        <img src="<?php echo $display_avatar; ?>" alt="<?php echo htmlspecialchars($display_author); ?>" class="w-4 h-4 rounded-full object-cover border border-slate-200" onerror="this.src='/images/avatar.png'">
+                                        <span><?php echo htmlspecialchars($display_author); ?></span>
                                     </span>
                                 </div>
                                 <h3 class="text-xl font-serif font-bold text-navy-900 mb-3 leading-snug group-hover:text-crimson-600 transition-colors" itemprop="headline">
                                     <a href="<?php echo $post_url; ?>"><?php echo htmlspecialchars($post['title']); ?></a>
                                 </h3>
                                 <p class="text-slate-500 mb-5 text-sm leading-relaxed flex-1 line-clamp-3" itemprop="description">
-                                    <?php echo !empty($post['excerpt']) ? htmlspecialchars($post['excerpt']) : substr(strip_tags($post['content']), 0, 150) . '...'; ?>
+                                    <?php 
+                                    $raw_cat_excerpt = !empty($post['excerpt']) ? $post['excerpt'] : substr(strip_tags($post['content']), 0, 150) . '...';
+                                    echo htmlspecialchars(bk_clean_text($raw_cat_excerpt)); 
+                                    ?>
                                 </p>
                                 <a href="<?php echo $post_url; ?>" class="text-crimson-600 font-semibold text-sm hover:text-crimson-800 transition-colors flex items-center gap-1 group-hover:gap-2">
                                     Read Article <i class="fa-solid fa-arrow-right text-xs"></i>
@@ -295,7 +299,7 @@ $cat_meta_desc  = htmlspecialchars(bk_category_meta_description($category_name))
                                 </div>
                             </a>
                             <div class="p-5 bg-navy-900/50 backdrop-blur-md">
-                                <p class="text-slate-400 text-xs mb-4 line-clamp-2 italic">"<?php echo htmlspecialchars($tr['excerpt']); ?>"</p>
+                                <p class="text-slate-400 text-xs mb-4 line-clamp-2 italic">"<?php echo htmlspecialchars(bk_clean_text($tr['excerpt'])); ?>"</p>
                                 <a href="<?php echo $tr_url; ?>" class="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
                                     READ FULL ARTICLE <i class="fa-solid fa-arrow-right text-crimson-500"></i>
                                 </a>

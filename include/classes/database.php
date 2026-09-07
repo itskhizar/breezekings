@@ -217,10 +217,11 @@ class MySQLDB
       $title = mysqli_real_escape_string($this->connection, $data['title']);
       $raw_slug = !empty($data['slug']) ? $data['slug'] : $data['title'];
       $slug = mysqli_real_escape_string($this->connection, $this->get_unique_slug($raw_slug));
-      $content = mysqli_real_escape_string($this->connection, $data['content']);
-      $excerpt = $data['excerpt'];
-      if (empty($excerpt)) {
-         $excerpt = $this->generateExcerpt($data['content']);
+      $raw_content = function_exists('bk_clean_text') ? bk_clean_text($data['content']) : $data['content'];
+      $content = mysqli_real_escape_string($this->connection, $raw_content);
+      $excerpt = !empty($data['excerpt']) ? $data['excerpt'] : $this->generateExcerpt($raw_content);
+      if (function_exists('bk_clean_text')) {
+         $excerpt = bk_clean_text($excerpt);
       }
       $meta_title = !empty($data['meta_title']) ? $data['meta_title'] : $data['title'];
       $meta_description = !empty($data['meta_description']) ? $data['meta_description'] : $excerpt;
@@ -247,10 +248,11 @@ class MySQLDB
       $title = mysqli_real_escape_string($this->connection, $data['title']);
       $raw_slug = !empty($data['slug']) ? $data['slug'] : $data['title'];
       $slug = mysqli_real_escape_string($this->connection, $this->get_unique_slug($raw_slug, $id));
-      $content = mysqli_real_escape_string($this->connection, $data['content']);
-      $excerpt = $data['excerpt'];
-      if (empty($excerpt)) {
-         $excerpt = $this->generateExcerpt($data['content']);
+      $raw_content = function_exists('bk_clean_text') ? bk_clean_text($data['content']) : $data['content'];
+      $content = mysqli_real_escape_string($this->connection, $raw_content);
+      $excerpt = !empty($data['excerpt']) ? $data['excerpt'] : $this->generateExcerpt($raw_content);
+      if (function_exists('bk_clean_text')) {
+         $excerpt = bk_clean_text($excerpt);
       }
       $meta_title = !empty($data['meta_title']) ? $data['meta_title'] : $data['title'];
       $meta_description = !empty($data['meta_description']) ? $data['meta_description'] : $excerpt;
@@ -294,7 +296,15 @@ class MySQLDB
    function get_post($id)
    {
       $id = (int)$id;
-      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, 
+                   CASE 
+                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                       ELSE 'Khizar Ahmad'
+                   END as author_name,
+                   u.profile_image as author_avatar
+            FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.id = $id AND p.is_deleted = 0";
@@ -307,7 +317,15 @@ class MySQLDB
 
    function get_all_posts($status = NULL)
    {
-      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, 
+                   CASE 
+                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                       ELSE 'Khizar Ahmad'
+                   END as author_name,
+                   u.profile_image as author_avatar
+            FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE p.is_deleted = 0";
@@ -329,7 +347,15 @@ class MySQLDB
          $status = mysqli_real_escape_string($this->connection, $status);
          $status_sql = " AND p.status = '$status'";
       }
-      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, 
+                   CASE 
+                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                       ELSE 'Khizar Ahmad'
+                   END as author_name,
+                   u.profile_image as author_avatar
+            FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE p.category_id = $cat_id AND p.is_deleted = 0 $status_sql
@@ -345,7 +371,15 @@ class MySQLDB
          $status_esc = mysqli_real_escape_string($this->connection, $status);
          $status_sql = " AND p.status = '$status_esc'";
       }
-      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, 
+                   CASE 
+                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                       ELSE 'Khizar Ahmad'
+                   END as author_name,
+                   u.profile_image as author_avatar
+            FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE (p.title LIKE '%$query%' OR p.content LIKE '%$query%' OR p.tags LIKE '%$query%' OR p.slug LIKE '%$query%') 
@@ -357,7 +391,15 @@ class MySQLDB
    function get_popular_posts($limit = 5)
    {
       $limit = (int) $limit;
-      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, 
+                   CASE 
+                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                       ELSE 'Khizar Ahmad'
+                   END as author_name,
+                   u.profile_image as author_avatar
+            FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.status = 'Published' AND p.is_deleted = 0
@@ -370,7 +412,15 @@ class MySQLDB
       $category_id = (int) $category_id;
       $exclude_id = (int) $exclude_id;
       $limit = (int) $limit;
-      $q = "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p 
+      $q = "SELECT p.*, c.category, 
+                   CASE 
+                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
+                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
+                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
+                       ELSE 'Khizar Ahmad'
+                   END as author_name,
+                   u.profile_image as author_avatar
+            FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.category_id = $category_id AND p.id != $exclude_id 

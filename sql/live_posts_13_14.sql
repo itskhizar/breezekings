@@ -1,7 +1,34 @@
 -- =============================================================================
--- BREEZEKINGS PRODUCTION SQL IMPORT: POSTS 13 & 14 + CATEGORIES SYNC
+-- BREEZEKINGS PRODUCTION SQL IMPORT: POSTS 13 & 14 + CLEANUP & CATEGORIES SYNC
 -- Execute this SQL script in your Live phpMyAdmin / MySQL Database
 -- =============================================================================
+
+-- 0. CLEANUP: Strip leftover editor placeholder text from existing live posts
+UPDATE `posts` 
+SET `excerpt` = REPLACE(`excerpt`, 'Start writing your amazing post content here...', ''),
+    `content` = REPLACE(`content`, '<p>Start writing your amazing post content here...</p>', '')
+WHERE `excerpt` LIKE '%Start writing%' OR `content` LIKE '%Start writing%';
+
+UPDATE `posts` 
+SET `excerpt` = REPLACE(`excerpt`, 'Start writing your amazing ', '')
+WHERE `excerpt` LIKE 'Start writing your amazing %';
+
+UPDATE `posts` 
+SET `excerpt` = REPLACE(`excerpt`, 'Start writing your a', '')
+WHERE `excerpt` LIKE 'Start writing your a%';
+
+UPDATE `posts` 
+SET `content` = REPLACE(`content`, '<p>Start writing your amazing ', '<p>')
+WHERE `content` LIKE '%<p>Start writing your amazing %';
+
+UPDATE `posts` 
+SET `content` = REPLACE(`content`, '<p>Start writing your a', '<p>')
+WHERE `content` LIKE '%<p>Start writing your a%';
+
+-- Ensure user author profile has real display name
+UPDATE `users` 
+SET `display_name` = 'Khizar Ahmad' 
+WHERE `username` = 'admin' AND (`display_name` IS NULL OR `display_name` = '' OR LOWER(TRIM(`display_name`)) = 'admin');
 
 -- 1. Ensure all categories exist and have nav_visible = 1
 INSERT INTO `categories` (`id`, `category`, `nav_visible`) VALUES (2, 'Technology', 1) ON DUPLICATE KEY UPDATE `category` = 'Technology', `nav_visible` = 1;

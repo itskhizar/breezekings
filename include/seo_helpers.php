@@ -221,3 +221,23 @@ if (!function_exists('bk_avatar_url')) {
         return "https://ui-avatars.com/api/?name={$name}&background=0B1F3A&color=ffffff&bold=true&size=128";
     }
 }
+
+if (!function_exists('bk_clean_text')) {
+    /**
+     * Strips residual editor placeholder phrases (e.g. "Start writing your amazing...", "Start writing your a...")
+     */
+    function bk_clean_text($text) {
+        if (empty($text)) return '';
+        // Strip HTML paragraph wrapper if entire paragraph was just the placeholder
+        $cleaned = preg_replace('/^<p>\s*Start writing your(?:\s+amazing\s+post\s+content\s+here|\s+amazing|\s+a)?\.{0,3}\s*<\/p>\s*/iu', '', $text);
+        // Strip placeholder prefix inside an opening paragraph tag: <p>Start writing your aInstagram -> <p>Instagram
+        $cleaned = preg_replace('/^(<p[^>]*>)\s*Start writing your(?:\s+amazing\s+post\s+content\s+here|\s+amazing|\s+a)?\.{0,3}\s*/iu', '$1', $cleaned);
+        // Strip placeholder prefix at start of plain text or markdown
+        $cleaned = preg_replace('/^Start writing your(?:\s+amazing\s+post\s+content\s+here|\s+amazing|\s+a)?\.{0,3}\s*/iu', '', $cleaned);
+        // Strip other common editor placeholder variations
+        $cleaned = preg_replace('/^Start writing or paste your article content here\.{0,3}\s*/iu', '', $cleaned);
+        $cleaned = preg_replace('/Start writing your\s+amazing\s+post\s+content\s+here\.{0,3}\s*/iu', '', $cleaned);
+        return trim($cleaned);
+    }
+}
+
