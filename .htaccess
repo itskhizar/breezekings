@@ -108,6 +108,7 @@ Options -Indexes
     RewriteCond %{REQUEST_URI} !^.*/sitemap-posts\.php
     RewriteCond %{REQUEST_URI} !^.*/rss\.php
     RewriteCond %{REQUEST_URI} !^.*/admin/
+    RewriteCond %{REQUEST_URI} !^.*/process\.php
     RewriteRule ^(.*)\.php$ /$1 [R=301,L]
 
     # 2. Dynamic XML Sitemap & RSS Feed

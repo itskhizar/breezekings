@@ -6,4 +6,5 @@ Thumbs.db
 config.local.php
 .env
 *.sql
+!sql/live_posts_13_14.sql
 

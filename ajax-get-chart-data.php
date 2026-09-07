@@ -27,15 +27,7 @@ if ($type === 'traffic') {
                 WHERE DATE(updated_at) = '$date' AND is_deleted = 0 AND status = 'Published'";
         $res = $database->query($sql);
         $row = $res ? mysqli_fetch_assoc($res) : null;
-        // Fallback: if no updated rows that day, use proportional estimate
         $v = $row ? (int)$row['v'] : 0;
-
-        // Supplement with sinusoidal mock when real data is sparse (common for new installs)
-        if ($v === 0) {
-            $base  = 80;
-            $trend = sin($i / 5) * 30 + cos($i / 11) * 15;
-            $v = round($base + $trend + rand(-15, 35));
-        }
         $views[] = $v;
     }
 

@@ -9,6 +9,41 @@ if ($session->userlevel < 1) {
     header("Location: dashboard.php");
     exit();
 }
+
+// Handle Category CRUD Operations Directly
+if (isset($_POST['addcategory'])) {
+    $cat_name = trim($_POST['category'] ?? '');
+    if (!empty($cat_name)) {
+        $database->addcategory($cat_name);
+        header("Location: admin-categories.php?msg=success");
+        exit();
+    } else {
+        header("Location: admin-categories.php?msg=error");
+        exit();
+    }
+}
+
+if (isset($_POST['edit_category'])) {
+    $cat_id = (int)($_POST['id'] ?? 0);
+    $cat_name = trim($_POST['category'] ?? '');
+    if ($cat_id > 0 && !empty($cat_name)) {
+        $database->edit_category($cat_id, $cat_name);
+        header("Location: admin-categories.php?msg=success");
+        exit();
+    } else {
+        header("Location: admin-categories.php?msg=error");
+        exit();
+    }
+}
+
+if (isset($_GET['del_cat'])) {
+    $del_id = (int)$_GET['del_cat'];
+    if ($del_id > 0) {
+        $database->delete_category($del_id);
+        header("Location: admin-categories.php?msg=deleted");
+        exit();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -166,18 +201,29 @@ if ($session->userlevel < 1) {
                 <!-- Main Table Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
                     
+                    <?php
+                    $result = $database->get_all_categories_admin();
+                    $categories_list = [];
+                    if ($result) {
+                        while ($r = mysqli_fetch_assoc($result)) {
+                            $categories_list[] = $r;
+                        }
+                    }
+                    $total_c = count($categories_list);
+                    ?>
+
                     <!-- Table Toolbar -->
                     <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-white">
                         <div class="flex gap-3">
-                            <button class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium py-2 px-4 rounded flex items-center gap-2 transition-colors text-sm">
-                                <i class="fa-solid fa-filter text-slate-400"></i> All Categories <i class="fa-solid fa-chevron-down text-[10px] ml-2 text-slate-400"></i>
-                            </button>
-                            <button class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium py-2 px-3.5 rounded transition-colors text-sm">
+                            <a href="admin-categories.php" class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium py-2 px-4 rounded flex items-center gap-2 transition-colors text-sm">
+                                <i class="fa-solid fa-list text-slate-400"></i> All Categories (<?php echo $total_c; ?>)
+                            </a>
+                            <a href="admin-categories.php" class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium py-2 px-3.5 rounded transition-colors text-sm" title="Refresh">
                                 <i class="fa-solid fa-rotate-right text-slate-400"></i>
-                            </button>
+                            </a>
                         </div>
                         <div class="text-sm text-slate-500">
-                            Showing <span class="font-bold text-slate-800">1 - 5</span> of 24
+                            Showing <span class="font-bold text-slate-800"><?php echo $total_c > 0 ? "1 - {$total_c}" : "0"; ?></span> of <span class="font-bold text-slate-800"><?php echo $total_c; ?></span> categories
                         </div>
                     </div>
 
@@ -189,18 +235,19 @@ if ($session->userlevel < 1) {
                                     <th class="px-6 py-4 w-16">#</th>
                                     <th class="px-6 py-4 w-48">Name</th>
                                     <th class="px-6 py-4 w-64">Slug</th>
-                                    <th class="px-6 py-4">Description</th>
+                                    <th class="px-6 py-4">Status &amp; Description</th>
+                                    <th class="px-6 py-4 text-center w-28">Live Posts</th>
                                     <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-100 bg-white">
                                 
                                 <?php
-                                $result = $database->get_all_categories_admin();
-                                if ($result && mysqli_num_rows($result) > 0) {
+                                if (!empty($categories_list)) {
                                     $count = 1;
-                                    while ($row = mysqli_fetch_assoc($result)) {
+                                    foreach ($categories_list as $row) {
                                         $slug = strtolower(str_replace(' ', '-', $row['category']));
+                                        $post_count = (int)($row['post_count'] ?? 0);
                                 ?>
                                 <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="px-6 py-4 text-slate-400 font-mono text-xs"><?php echo str_pad($count++, 2, '0', STR_PAD_LEFT); ?></td>
@@ -215,14 +262,19 @@ if ($session->userlevel < 1) {
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-slate-500 text-xs">
-                                        Managing posts under the <?php echo htmlspecialchars($row['category']); ?> classification.
+                                        Managing posts under the <span class="font-semibold text-slate-700"><?php echo htmlspecialchars($row['category']); ?></span> taxonomy.
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold <?php echo $post_count > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-500'; ?>">
+                                            <?php echo $post_count; ?> <?php echo $post_count === 1 ? 'post' : 'posts'; ?>
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-end gap-3">
-                                            <button onclick='openEditModal(<?php echo json_encode($row); ?>)' class="w-8 h-8 rounded bg-white border border-slate-200 text-slate-400 hover:text-brand-blue hover:border-brand-blue flex items-center justify-center transition-all shadow-sm">
+                                            <button onclick='openEditModal(<?php echo json_encode($row); ?>)' class="w-8 h-8 rounded bg-white border border-slate-200 text-slate-400 hover:text-brand-blue hover:border-brand-blue flex items-center justify-center transition-all shadow-sm" title="Edit Category">
                                                 <i class="fa-solid fa-pen text-xs"></i>
                                             </button>
-                                            <a href="process.php?del_cat=<?php echo $row['id']; ?>" onclick="return confirm('Are you sure? This will not delete posts in this category.')" class="w-8 h-8 rounded bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-500 flex items-center justify-center transition-all shadow-sm">
+                                            <a href="admin-categories.php?del_cat=<?php echo $row['id']; ?>" onclick="return confirm('Are you sure you want to delete <?php echo addslashes($row['category']); ?>? Any existing articles will be safely preserved.')" class="w-8 h-8 rounded bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-500 flex items-center justify-center transition-all shadow-sm" title="Delete Category">
                                                 <i class="fa-solid fa-trash text-xs"></i>
                                             </a>
                                         </div>
@@ -231,7 +283,7 @@ if ($session->userlevel < 1) {
                                 <?php
                                     }
                                 } else {
-                                    echo '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">No categories found. Create your first category!</td></tr>';
+                                    echo '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">No categories found. Create your first category above!</td></tr>';
                                 }
                                 ?>
 
@@ -239,22 +291,15 @@ if ($session->userlevel < 1) {
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-white">
-                        <div class="flex gap-2">
-                            <button class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors bg-white"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                            <button class="w-9 h-9 flex items-center justify-center rounded bg-brand-blue text-white font-medium text-sm">1</button>
-                            <button class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium bg-white">2</button>
-                            <button class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium bg-white">3</button>
-                            <span class="px-1 text-slate-400 self-center">...</span>
-                            <button class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium bg-white">5</button>
-                            <button class="w-9 h-9 flex items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors bg-white"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    <!-- Dynamic Table Footer -->
+                    <div class="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+                        <div class="text-sm text-slate-500">
+                            Total <span class="font-bold text-slate-800"><?php echo $total_c; ?></span> categories dynamically synced across navigation &amp; database
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="text-sm text-slate-500">Rows per page:</span>
-                            <button class="border border-slate-200 rounded px-3 py-1.5 text-sm font-medium text-slate-700 bg-white flex items-center gap-2">
-                                25 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
-                            </button>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Real-time Taxonomy Active
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -267,7 +312,7 @@ if ($session->userlevel < 1) {
                     <div>
                         <h4 class="text-sm font-bold text-purple-900 mb-1">Category Management Tips</h4>
                         <p class="text-sm text-purple-800 leading-relaxed">
-                            Use descriptive slugs for better SEO rankings. Categories with more than 100 posts might benefit from being split into sub-categories to improve navigation.
+                            Categories added or edited here automatically sync with the public website navbar and filters. The top 5 categories appear in the main navigation, while others appear in the "More" dropdown.
                         </p>
                     </div>
                 </div>
@@ -300,7 +345,7 @@ if ($session->userlevel < 1) {
                             <i class="fa-solid fa-xmark text-xl"></i>
                         </button>
                     </div>
-                    <form action="process.php" method="POST">
+                    <form action="admin-categories.php" method="POST">
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">Category Name</label>
@@ -332,7 +377,7 @@ if ($session->userlevel < 1) {
                             <i class="fa-solid fa-xmark text-xl"></i>
                         </button>
                     </div>
-                    <form action="process.php" method="POST">
+                    <form action="admin-categories.php" method="POST">
                         <input type="hidden" name="id" id="edit_cat_id">
                         <div class="space-y-4">
                             <div>

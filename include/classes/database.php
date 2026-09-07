@@ -395,22 +395,22 @@ class MySQLDB
 
    function addcategory($category)
    {
-      $category = mysqli_real_escape_string($this->connection, $category);
-      $q = "INSERT INTO `categories` (`category`) VALUES ('$category')";
+      $category = mysqli_real_escape_string($this->connection, trim($category));
+      $q = "INSERT INTO `categories` (`category`, `nav_visible`) VALUES ('$category', 1)";
       return mysqli_query($this->connection, $q);
    }
 
    /**
-    * Public nav: only Phase-1 (nav_visible=1) categories, ordered by name.
+    * Public nav: all categories ordered by name with published post count.
     */
    function get_all_categories()
    {
-      $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c WHERE c.nav_visible = 1 ORDER BY category ASC";
+      $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c ORDER BY category ASC";
       return mysqli_query($this->connection, $q);
    }
 
    /**
-    * Admin panel: all categories regardless of nav_visible.
+    * Admin panel: all categories with published post count.
     */
    function get_all_categories_admin()
    {
@@ -419,18 +419,18 @@ class MySQLDB
    }
 
    /**
-    * Sitemap: only Phase-1 nav-visible categories with at least 1 published post.
+    * Sitemap: only categories with at least 1 published post.
     */
    function get_nav_categories_for_sitemap()
    {
-      $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c WHERE c.nav_visible = 1 HAVING post_count > 0 ORDER BY category ASC";
+      $q = "SELECT c.*, (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count FROM categories c HAVING post_count > 0 ORDER BY category ASC";
       return mysqli_query($this->connection, $q);
    }
 
    function edit_category($id, $category)
    {
       $id = (int) $id;
-      $category = mysqli_real_escape_string($this->connection, $category);
+      $category = mysqli_real_escape_string($this->connection, trim($category));
       $q = "UPDATE `categories` SET `category` = '$category' WHERE id = $id";
       return mysqli_query($this->connection, $q);
    }
@@ -438,6 +438,13 @@ class MySQLDB
    function delete_category($id)
    {
       $id = (int) $id;
+      // Reassign any posts that belonged to this category to a fallback category so posts are not orphaned
+      $fallback_query = mysqli_query($this->connection, "SELECT id FROM categories WHERE id != $id ORDER BY id ASC LIMIT 1");
+      if ($fallback_query && mysqli_num_rows($fallback_query) > 0) {
+         $fallback = mysqli_fetch_assoc($fallback_query);
+         $fallback_id = (int)$fallback['id'];
+         mysqli_query($this->connection, "UPDATE posts SET category_id = $fallback_id WHERE category_id = $id");
+      }
       return mysqli_query($this->connection, "DELETE FROM categories WHERE id = $id");
    }
 

@@ -574,8 +574,8 @@ $_more_cats = array_slice($_all_cats, 5);
     <?php endif; ?>
 
     <!-- Mobile Contact CTA -->
-    <a href="mailto:<?= $contact_email ?>" class="mt-6 flex items-center justify-center gap-2 bg-[#C8102E] text-white font-bold text-sm py-3 px-4 rounded-xl shadow-md">
-        <i class="fa-solid fa-envelope"></i> Email Us — <?= $contact_email ?>
+    <a href="mailto:<?= $contact_email ?>" class="mt-6 flex items-center justify-center gap-2 bg-[#C8102E] hover:bg-[#a31a23] text-white font-bold text-sm py-3 px-4 rounded-xl shadow-md transition-colors" aria-label="Contact Us via Email">
+        <i class="fa-solid fa-envelope"></i> Contact Us
     </a>
 </div>
 

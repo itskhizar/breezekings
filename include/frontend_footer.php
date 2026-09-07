@@ -237,8 +237,8 @@ $footer_email = "azamwaseem44@gmail.com";
         <!-- ── Contact CTA Bar ─────────────────────────────────── -->
         <div class="bk-footer-contact-bar">
             <p>Have a story tip, editorial inquiry or feedback? <strong>We'd love to hear from you.</strong></p>
-            <a href="mailto:<?= $footer_email ?>" class="bk-footer-contact-mail">
-                <i class="fa-solid fa-envelope"></i> <?= $footer_email ?>
+            <a href="mailto:<?= $footer_email ?>" class="bk-footer-contact-mail" aria-label="Contact Us via Email">
+                <i class="fa-solid fa-envelope"></i> Contact Us
             </a>
         </div>
 
