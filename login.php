@@ -176,13 +176,13 @@
                     </div>
 
                     <!-- Security Info Badge -->
-                    <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                    <!-- <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
                         <span class="flex items-center gap-1.5">
                             <i class="fa-solid fa-shield-halved text-emerald-600"></i>
                             End-to-End Encrypted Session
                         </span>
                         <span>v2.4 Editorial</span>
-                    </div>
+                    </div> -->
 
                     <!-- Submit Button -->
                     <div class="pt-2">
