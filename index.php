@@ -317,10 +317,10 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     // Try featured flag first, fall back to latest
                     $featured_sql = "SELECT p.*, c.category, 
                                      CASE 
-                                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                                         WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                                         ELSE 'Khizar Ahmad'
+                                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                                         WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                                         ELSE 'Admin'
                                      END as author_name,
                                      u.profile_image as author_avatar
                                      FROM posts p
@@ -336,11 +336,11 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $featured_posts = $database->query(
                             "SELECT p.*, c.category, 
                              CASE 
-                                 WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                                 WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                                 WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                                 ELSE 'Khizar Ahmad'
-                             END as author_name,
+                                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                                         WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                                         ELSE 'Admin'
+                                     END as author_name,
                              u.profile_image as author_avatar
                              FROM posts p
                              LEFT JOIN categories c ON p.category_id = c.id
@@ -355,7 +355,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $hero_date_fmt = date('M d, Y', strtotime($hero['created_at']));
                         $hero_iso = date('c', strtotime($hero['created_at']));
                         $hero_read = $database->getReadingTime($hero['content']);
-                        $hero_author = htmlspecialchars((!empty($hero['author_name']) && strcasecmp($hero['author_name'], 'Admin') !== 0) ? $hero['author_name'] : 'Khizar Ahmad');
+                        $hero_author = htmlspecialchars(!empty($hero['author_name']) ? $hero['author_name'] : 'Admin');
                         $hero_avatar = bk_avatar_url($hero['author_avatar'] ?? null, $hero_author);
                         $hero_cat = htmlspecialchars($hero['category'] ?? '');
                         $hero_title = htmlspecialchars($hero['title']);
@@ -496,7 +496,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 ? $post['excerpt']
                                 : substr(strip_tags($post['content']), 0, 150) . '…';
                             $excerpt = htmlspecialchars(bk_clean_text($raw_post_excerpt));
-                            $author_name = htmlspecialchars((!empty($post['author_name']) && strcasecmp($post['author_name'], 'Admin') !== 0) ? $post['author_name'] : 'Khizar Ahmad');
+                            $author_name = htmlspecialchars(!empty($post['author_name']) ? $post['author_name'] : 'Admin');
                             $author_avatar = bk_avatar_url($post['author_avatar'] ?? null, $author_name);
                             $post_url = bk_post_url($post);
                             $cat_url = bk_category_url($post['category_id'], $post['category'] ?? 'General');

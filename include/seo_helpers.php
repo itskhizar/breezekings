@@ -214,10 +214,7 @@ if (!function_exists('bk_avatar_url')) {
                 return '/images/' . $clean;
             }
         }
-        if (file_exists('images/avatar.png')) {
-            return '/images/avatar.png';
-        }
-        $name = rawurlencode(trim($author_name ?: 'Breezekings'));
+        $name = rawurlencode(trim($author_name ?: 'Admin'));
         return "https://ui-avatars.com/api/?name={$name}&background=0B1F3A&color=ffffff&bold=true&size=128";
     }
 }

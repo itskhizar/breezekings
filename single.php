@@ -57,11 +57,11 @@ $search_q = isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '';
 $database->increment_views($post_id);
 
 $author_info = $database->getUserInfo($post['author']);
-$author_name = !empty($post['author_name']) ? $post['author_name'] : (!empty($author_info['display_name']) ? $author_info['display_name'] : (!empty($author_info['username']) ? $author_info['username'] : 'Khizar Ahmad'));
-if (empty($author_name) || strcasecmp($author_name, 'Admin') === 0) {
-    $author_name = 'Khizar Ahmad';
+$author_name = !empty($post['author_name']) ? $post['author_name'] : (!empty($author_info['display_name']) ? $author_info['display_name'] : (!empty($author_info['username']) ? $author_info['username'] : (!empty($post['author']) ? $post['author'] : 'Admin')));
+if (empty($author_name) || strcasecmp($author_name, 'admin') === 0) {
+    $author_name = 'Admin';
 }
-$author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name);
+$author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avatar'] ?? null, $author_name);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -130,6 +130,24 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
 
     <!-- Structured Data: BlogPosting, BreadcrumbList, Speakable -->
     <?php
+    // Extract FAQ schema if article contains question headings
+    $faq_items = [];
+    if (preg_match_all('/<h[2-4][^>]*>(.*?\?.*?)<\/h[2-4]>\s*<p[^>]*>(.*?)<\/p>/is', $post['content'], $faq_matches, PREG_SET_ORDER)) {
+        foreach (array_slice($faq_matches, 0, 5) as $fm) {
+            $fq_q = trim(strip_tags($fm[1]));
+            $fq_a = trim(strip_tags($fm[2]));
+            if (mb_strlen($fq_q) >= 8 && mb_strlen($fq_a) >= 20) {
+                $faq_items[] = [
+                    "@type" => "Question",
+                    "name" => $fq_q,
+                    "acceptedAnswer" => [
+                        "@type" => "Answer",
+                        "text" => $fq_a
+                    ]
+                ];
+            }
+        }
+    }
     // Build tags array for schema keywords
     $schema_tags = !empty($post['tags']) ? array_map('trim', explode(',', $post['tags'])) : [];
     $schema_tags_json = !empty($schema_tags) ? json_encode($schema_tags) : '[]';
@@ -234,7 +252,13 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                     },
                     "query-input": "required name=search_term_string"
                 }
+            }<?php if (!empty($faq_items)): ?>,
+            {
+                "@type": "FAQPage",
+                "@id": "<?php echo $canonical_url; ?>#faq",
+                "mainEntity": <?php echo json_encode($faq_items, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>
             }
+            <?php endif; ?>
         ]
     }
     </script>
@@ -535,7 +559,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                 
                 <div class="flex items-center gap-4 text-xs font-medium uppercase tracking-wider text-slate-300">
                     <div class="flex items-center gap-3">
-                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-8 h-8 rounded-full border-2 border-slate-400 object-cover" onerror="this.src='/images/avatar.png'">
+                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-8 h-8 rounded-full border-2 border-slate-400 object-cover" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($author_name); ?>&background=0B1F3A&color=ffffff&bold=true&size=64';">
                         <span class="text-white normal-case font-semibold"><?php echo htmlspecialchars($author_name); ?></span>
                     </div>
                     <span>&bull;</span>
@@ -583,7 +607,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
 
                     <!-- Author Box -->
                     <div class="mt-16 bg-white border border-slate-200 rounded-lg p-8 flex flex-col sm:flex-row gap-8 items-start shadow-sm">
-                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-20 h-20 rounded-full object-cover shrink-0 border-4 border-slate-50" onerror="this.src='/images/avatar.png'">
+                        <img src="<?php echo $author_img; ?>" alt="<?php echo htmlspecialchars($author_name); ?>" class="w-20 h-20 rounded-full object-cover shrink-0 border-4 border-slate-50" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($author_name); ?>&background=0B1F3A&color=ffffff&bold=true&size=128';">
                         <div class="flex-1">
                             <p class="text-[10px] font-bold uppercase tracking-widest text-crimson-600 mb-1">Article Author</p>
                             <h4 class="text-lg font-serif font-bold text-navy-900 mb-1.5"><?php echo htmlspecialchars($author_name); ?></h4>

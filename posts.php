@@ -281,11 +281,13 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                         </div>
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
+                                        <?php 
+                                        $portal_author = $row['author_name'] ?? $row['author'] ?? 'Admin';
+                                        $portal_avatar = bk_avatar_url($row['author_avatar'] ?? null, $portal_author);
+                                        ?>
                                         <div class="flex items-center gap-2">
-                                            <div class="w-6 h-6 rounded-full bg-[#0B1F3A] text-white flex items-center justify-center text-[9px] font-bold">
-                                                <?php echo strtoupper(substr($row['author_name'] ?? $row['author'] ?? 'B', 0, 1)); ?>
-                                            </div>
-                                            <span class="font-medium text-xs text-slate-700"><?php echo htmlspecialchars($row['author_name'] ?? $row['author'] ?? 'Admin'); ?></span>
+                                            <img src="<?php echo $portal_avatar; ?>" alt="<?php echo htmlspecialchars($portal_author); ?>" class="w-6 h-6 rounded-full object-cover border border-slate-200" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($portal_author); ?>&background=0B1F3A&color=ffffff&bold=true&size=64';">
+                                            <span class="font-medium text-xs text-slate-700"><?php echo htmlspecialchars($portal_author); ?></span>
                                         </div>
                                     </td>
                                     <td class="px-5 py-4 text-center whitespace-nowrap">

@@ -248,10 +248,10 @@ $cat_meta_desc  = htmlspecialchars(bk_category_meta_description($category_name))
                                     <span class="text-[11px] text-slate-300">&bull;</span>
                                     <span class="text-[11px] text-slate-600 font-medium normal-case flex items-center gap-1.5">
                                         <?php 
-                                        $display_author = (!empty($post['author_name']) && strcasecmp($post['author_name'], 'Admin') !== 0) ? $post['author_name'] : 'Khizar Ahmad';
+                                        $display_author = !empty($post['author_name']) ? $post['author_name'] : 'Admin';
                                         $display_avatar = bk_avatar_url($post['author_avatar'] ?? null, $display_author);
                                         ?>
-                                        <img src="<?php echo $display_avatar; ?>" alt="<?php echo htmlspecialchars($display_author); ?>" class="w-4 h-4 rounded-full object-cover border border-slate-200" onerror="this.src='/images/avatar.png'">
+                                        <img src="<?php echo $display_avatar; ?>" alt="<?php echo htmlspecialchars($display_author); ?>" class="w-4 h-4 rounded-full object-cover border border-slate-200" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' . urlencode($display_author) . '&background=0B1F3A&color=ffffff&bold=true&size=64';">
                                         <span><?php echo htmlspecialchars($display_author); ?></span>
                                     </span>
                                 </div>

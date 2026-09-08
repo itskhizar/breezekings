@@ -298,11 +298,11 @@ class MySQLDB
       $id = (int)$id;
       $q = "SELECT p.*, c.category, 
                    CASE 
-                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                       ELSE 'Khizar Ahmad'
-                   END as author_name,
+                        WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                        WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        ELSE 'Admin'
+                    END as author_name,
                    u.profile_image as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
@@ -319,11 +319,11 @@ class MySQLDB
    {
       $q = "SELECT p.*, c.category, 
                    CASE 
-                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                       ELSE 'Khizar Ahmad'
-                   END as author_name,
+                        WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                        WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        ELSE 'Admin'
+                    END as author_name,
                    u.profile_image as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
@@ -349,11 +349,11 @@ class MySQLDB
       }
       $q = "SELECT p.*, c.category, 
                    CASE 
-                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                       ELSE 'Khizar Ahmad'
-                   END as author_name,
+                        WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                        WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        ELSE 'Admin'
+                    END as author_name,
                    u.profile_image as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
@@ -373,11 +373,11 @@ class MySQLDB
       }
       $q = "SELECT p.*, c.category, 
                    CASE 
-                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                       ELSE 'Khizar Ahmad'
-                   END as author_name,
+                        WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                        WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        ELSE 'Admin'
+                    END as author_name,
                    u.profile_image as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
@@ -393,11 +393,11 @@ class MySQLDB
       $limit = (int) $limit;
       $q = "SELECT p.*, c.category, 
                    CASE 
-                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                       ELSE 'Khizar Ahmad'
-                   END as author_name,
+                        WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                        WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        ELSE 'Admin'
+                    END as author_name,
                    u.profile_image as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
@@ -414,11 +414,11 @@ class MySQLDB
       $limit = (int) $limit;
       $q = "SELECT p.*, c.category, 
                    CASE 
-                       WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' AND LOWER(TRIM(u.display_name)) != 'admin' THEN TRIM(u.display_name)
-                       WHEN u.username IS NOT NULL AND TRIM(u.username) != '' AND LOWER(TRIM(u.username)) != 'admin' THEN TRIM(u.username)
-                       WHEN p.author IS NOT NULL AND TRIM(p.author) != '' AND LOWER(TRIM(p.author)) NOT IN ('admin', 'fn-admin') THEN TRIM(p.author)
-                       ELSE 'Khizar Ahmad'
-                   END as author_name,
+                        WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
+                        WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        ELSE 'Admin'
+                    END as author_name,
                    u.profile_image as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
