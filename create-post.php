@@ -270,9 +270,14 @@ if (!$session->logged_in) {
 
                                 <!-- Content Area -->
                                 <div class="p-6 flex-1 min-h-[420px] relative">
-                                    <div id="htmlModeNotice" class="hidden mb-3 p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs flex items-center gap-2 font-sans">
-                                        <i class="fa-solid fa-code text-amber-600 shrink-0"></i>
-                                        <span><strong>HTML Mode Active:</strong> You are editing raw HTML code directly. Use proper markup (&lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;). Click <strong>Visual</strong> to preview before saving.</span>
+                                    <div id="htmlModeNotice" class="hidden mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg text-blue-950 text-xs flex items-center justify-between gap-3 font-sans">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-code text-blue-600 shrink-0 text-sm"></i>
+                                            <span><strong>HTML Code View:</strong> You are viewing raw HTML markup. Toolbar buttons are paused in code view.</span>
+                                        </div>
+                                        <button type="button" onclick="toggleHtmlMode()" class="px-3 py-1.5 bg-brand-blue text-white rounded font-medium hover:bg-brand-hover text-xs shrink-0 flex items-center gap-1 shadow-sm">
+                                            <i class="fa-solid fa-eye text-[11px]"></i> Switch to Visual Editor
+                                        </button>
                                     </div>
                                     <div id="editor" class="w-full min-h-[380px] text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true" data-placeholder="Start writing or paste your article content here..."></div>
                                     <textarea id="rawHtmlEditor" class="w-full min-h-[380px] p-4 font-mono text-xs text-slate-100 bg-slate-900 rounded-lg outline-none resize-y hidden leading-relaxed" placeholder="Paste or edit raw HTML article content here..."></textarea>
@@ -770,39 +775,49 @@ if (!$session->logged_in) {
             const plainText = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
             const html      = e.clipboardData ? e.clipboardData.getData('text/html')  : '';
 
-            // ── Smart HTML-source detection ────────────────────────────────────
-            // If the plain text clipboard looks like raw HTML (starts with < and has tags)
-            // but the author is in visual mode, auto-switch to HTML mode and paste there.
+            // Check if user pasted raw HTML markup (e.g. <h2>..., <p>..., <table>...)
             const looksLikeHtmlSource = /^\s*<(!DOCTYPE|html|head|body|p|h[1-6]|div|ul|ol|li|table|section|article|blockquote|pre|code|strong|em|br|hr|a\s|img\s)/i.test(plainText.trim())
-                && (plainText.match(/<\/?(p|h[1-6]|ul|ol|li|div|strong|em|blockquote|pre|code)>/gi) || []).length > 2;
+                && (plainText.match(/<\/?(p|h[1-6]|ul|ol|li|div|strong|em|blockquote|pre|code|table|tr|td|th)>/gi) || []).length >= 2;
 
             if (looksLikeHtmlSource && !isHtmlMode) {
                 e.preventDefault();
-                // Show an informative toast
-                showEditorToast(
-                    '🔍 Raw HTML detected — switched to HTML mode automatically. Review and click Visual to preview.',
-                    'amber'
-                );
-                // Switch to HTML mode and paste there
-                isHtmlMode = true;
-                const rawHtmlEditor = document.getElementById('rawHtmlEditor');
-                const htmlModeBtn   = document.getElementById('htmlModeBtn');
-                const htmlModeText  = document.getElementById('htmlModeText');
-                const toolbarButtons = document.querySelectorAll('#editorToolbar button:not(#htmlModeBtn), #headingSelect');
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(plainText, 'text/html');
 
-                rawHtmlEditor.value = (rawHtmlEditor.value || '') + plainText;
-                editor.classList.add('hidden');
-                rawHtmlEditor.classList.remove('hidden');
-                if (htmlModeBtn) {
-                    htmlModeBtn.classList.add('bg-brand-blue', 'text-white');
-                    htmlModeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+                    // Strip disruptive tailwind variables, styles, scripts and objects
+                    const allEls = doc.body.querySelectorAll('*');
+                    allEls.forEach(el => {
+                        const st = el.getAttribute('style') || '';
+                        if (st.includes('--tw-') || st.includes('background') || st.includes('color') || st.includes('font-family')) {
+                            el.removeAttribute('style');
+                        }
+                        el.removeAttribute('node');
+                        el.removeAttribute('face');
+                        el.removeAttribute('size');
+                        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') {
+                            el.remove();
+                        }
+                    });
+
+                    const cleanHtml = doc.body.innerHTML;
+                    const currentText = (editor.innerText || '').trim();
+                    const sel = window.getSelection();
+                    const isAllSelected = sel && sel.toString().trim().length > 0 && sel.toString().trim().length >= currentText.length * 0.8;
+
+                    if (!currentText || isAllSelected) {
+                        editor.innerHTML = cleanHtml;
+                    } else {
+                        document.execCommand('insertHTML', false, cleanHtml);
+                    }
+
+                    showEditorToast('✨ HTML formatted and rendered directly in Visual view! Toolbar is ready.', 'green');
+                    updateWordCount();
+                    saveDraft();
+                    return;
+                } catch(err) {
+                    console.error('Error parsing pasted HTML:', err);
                 }
-                if (htmlModeText) htmlModeText.innerText = 'Visual';
-                toolbarButtons.forEach(btn => { btn.disabled = true; btn.classList.add('opacity-40', 'pointer-events-none'); });
-                rawHtmlEditor.focus();
-                updateWordCount();
-                saveDraft();
-                return;
             }
 
             // ── Standard rich-text paste (from Google Docs, Word, etc.) ──────────
@@ -812,22 +827,28 @@ if (!$session->logged_in) {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
 
-                    // Strip disruptive styles from ChatGPT (dark backgrounds, fixed fonts, etc.)
                     const all = doc.body.querySelectorAll('*');
                     all.forEach(el => {
-                        el.style.backgroundColor = '';
-                        el.style.color = '';
-                        el.style.fontFamily = '';
+                        const st = el.getAttribute('style') || '';
+                        if (st.includes('--tw-') || st.includes('background') || st.includes('color') || st.includes('font-family')) {
+                            el.removeAttribute('style');
+                        }
+                        el.removeAttribute('node');
                         el.removeAttribute('face');
                         el.removeAttribute('size');
-                        if (el.tagName === 'BUTTON' || el.tagName === 'SVG') {
+                        if (el.tagName === 'BUTTON' || el.tagName === 'SVG' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') {
                             el.remove();
                         }
                     });
 
                     document.execCommand('insertHTML', false, doc.body.innerHTML);
                 } catch(err) {
-                    // Fallback to standard paste
+                    const text = e.clipboardData.getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                }
+                updateWordCount();
+                saveDraft();
+            }
                     const text = e.clipboardData.getData('text/plain');
                     document.execCommand('insertText', false, text);
                 }
