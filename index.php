@@ -733,7 +733,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         </h3>
                         <div class="space-y-1" role="list">
                             <?php
-                            $cats = $database->get_all_categories();
+                            $cats = $database->get_all_categories(true);
                             while ($cat = mysqli_fetch_assoc($cats)):
                                 $cat_name = htmlspecialchars($cat['category']);
                                 $cat_count = (int) $cat['post_count'];

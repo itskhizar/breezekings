@@ -310,9 +310,12 @@ if ($session->userlevel < 1 && !$is_author) {
                                     </div>
 
                                     <div class="flex items-center justify-between py-2">
-                                        <label class="text-sm text-slate-600 font-medium">Featured Post</label>
+                                        <div>
+                                            <label for="isFeatured" class="text-sm text-slate-700 font-medium cursor-pointer">Featured Post</label>
+                                            <p class="text-[10px] text-slate-400">Highlight this post in homepage hero section</p>
+                                        </div>
                                         <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" name="is_featured" class="sr-only peer" <?php if($post['is_featured']) echo 'checked'; ?>>
+                                            <input type="checkbox" name="is_featured" id="isFeatured" value="1" class="sr-only peer" <?php if(!empty($post['is_featured']) && $post['is_featured'] == 1) echo 'checked'; ?>>
                                             <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-blue"></div>
                                         </label>
                                     </div>

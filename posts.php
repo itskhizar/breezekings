@@ -6,6 +6,23 @@ if (!$session->logged_in) {
     exit();
 }
 
+// Toggle Featured Post handler
+if (isset($_GET['toggle_featured'])) {
+    $feat_id = (int)$_GET['toggle_featured'];
+    if ($feat_id > 0) {
+        $chk_post = mysqli_fetch_assoc($database->query("SELECT is_featured FROM posts WHERE id = $feat_id"));
+        if ($chk_post) {
+            $new_status = (!empty($chk_post['is_featured'])) ? 0 : 1;
+            if ($new_status === 1) {
+                $database->query("UPDATE posts SET is_featured = 0");
+            }
+            $database->query("UPDATE posts SET is_featured = $new_status WHERE id = $feat_id");
+        }
+        header("Location: posts.php?msg=featured_updated");
+        exit();
+    }
+}
+
 $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 
@@ -263,11 +280,14 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                         <div class="flex items-center gap-3.5">
                                             <div class="relative flex-shrink-0">
                                                 <img src="<?php echo $featured_image; ?>" alt="Thumbnail" class="w-14 h-11 rounded-lg object-cover border border-slate-100 shadow-sm" onerror="this.src='images/blog-default.jpg'">
-                                                <?php if (!empty($row['is_featured'])): ?>
-                                                    <div class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 text-white rounded-full flex items-center justify-center text-[7px] shadow" title="Featured Post">
-                                                        <i class="fa-solid fa-star"></i>
-                                                    </div>
-                                                <?php endif; ?>
+                                                <?php 
+                                                $is_f = !empty($row['is_featured']);
+                                                $star_title = $is_f ? 'Featured post (Hero section) — click to unfeature' : 'Click to make this the Featured Hero post';
+                                                $star_class = $is_f ? 'bg-amber-400 text-white shadow ring-2 ring-white' : 'bg-slate-200/80 text-slate-400 hover:bg-amber-400 hover:text-white';
+                                                ?>
+                                                <a href="posts.php?toggle_featured=<?php echo $row['id']; ?>" class="absolute -top-2 -right-2 w-5 h-5 <?php echo $star_class; ?> rounded-full flex items-center justify-center text-[8px] transition-all cursor-pointer z-10" title="<?php echo $star_title; ?>">
+                                                    <i class="fa-solid fa-star"></i>
+                                                </a>
                                             </div>
                                             <div class="min-w-0 flex-1">
                                                 <a href="edit-post.php?id=<?php echo $row['id']; ?>" class="font-bold text-[#0B1F3A] hover:text-[#C5202B] transition-colors line-clamp-1 text-sm block">
