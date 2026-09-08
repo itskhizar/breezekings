@@ -514,6 +514,10 @@ if ($session->userlevel < 1 && !$is_author) {
 
             contentInput.value = editor.innerHTML;
 
+            // Flush any unsaved text in tagInput before submitting
+            if (typeof addTagFromInput === 'function') addTagFromInput();
+            if (hiddenTags) hiddenTags.value = tags.join(',');
+
             _isSubmitting = true;
             document.querySelectorAll('[onclick="submitPost()"]').forEach(function(btn) {
                 btn.disabled = true;
@@ -642,13 +646,20 @@ if ($session->userlevel < 1 && !$is_author) {
         function updateTags() {
             const tagElements = tags.map((tag, index) => `
                 <span class="bg-brand-blue/10 text-brand-blue text-[11px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                    ${tag}
+                    ${escapeHtml(tag)}
                     <button type="button" onclick="removeTag(${index})" class="hover:text-brand-hover"><i class="fa-solid fa-xmark"></i></button>
                 </span>
             `).join('');
             tagContainer.innerHTML = tagElements;
+            // Always re-append the input (innerHTML wipe detaches it)
             tagContainer.appendChild(tagInput);
             hiddenTags.value = tags.join(',');
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str));
+            return d.innerHTML;
         }
 
         function removeTag(index) {
@@ -656,20 +667,32 @@ if ($session->userlevel < 1 && !$is_author) {
             updateTags();
         }
 
+        function addTagFromInput() {
+            if (!tagInput) return;
+            const tag = tagInput.value.trim().replace(/[,\s]+$/, '');
+            if (tag && !tags.includes(tag)) {
+                tags.push(tag);
+                tagInput.value = '';
+                updateTags();
+                return true;
+            }
+            tagInput.value = '';
+            return false;
+        }
+
         if (tagInput) {
             tagInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',') {
+                if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
                     e.preventDefault();
-                    const tag = this.value.trim().replace(/,/g, '');
-                    if (tag && !tags.includes(tag)) {
-                        tags.push(tag);
-                        this.value = '';
-                        updateTags();
-                    }
+                    addTagFromInput();
                 } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
                     tags.pop();
                     updateTags();
                 }
+            });
+            // Also add tag when user blurs the input (clicks away after typing)
+            tagInput.addEventListener('blur', function() {
+                if (this.value.trim()) addTagFromInput();
             });
         }
 
