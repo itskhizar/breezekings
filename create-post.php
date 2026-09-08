@@ -392,7 +392,7 @@ if (!$session->logged_in) {
                                         <textarea name="meta_description" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue resize-none" placeholder="Search result snippet..."></textarea>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tags (Press Enter/Space to add)</label>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tags (Press Enter or comma to add)</label>
                                         <div id="tagContainer" class="flex flex-wrap gap-2 p-2 bg-slate-50 border border-slate-200 rounded min-h-[40px]">
                                             <input type="text" id="tagInput" class="bg-transparent border-none outline-none text-sm text-slate-700 min-w-[100px] flex-1" placeholder="Add tags...">
                                         </div>
@@ -536,6 +536,11 @@ if (!$session->logged_in) {
 
             contentInput.value = editor.innerHTML;
 
+            // Ensure slug is populated
+            if (postSlug && (!postSlug.value.trim() || !slugIsCustomized) && postTitle && postTitle.value.trim()) {
+                postSlug.value = slugify(postTitle.value);
+            }
+
             // Flush any unsaved text in tagInput before submitting
             if (typeof addTagFromInput === 'function') addTagFromInput();
             if (hiddenTags) hiddenTags.value = tags.join(',');
@@ -551,7 +556,7 @@ if (!$session->logged_in) {
             });
 
             // Clear draft since we're officially submitting
-            try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+            try { localStorage.removeItem('bk_draft_create'); } catch(e) {}
 
             document.getElementById('postForm').submit();
         }
@@ -674,19 +679,20 @@ if (!$session->logged_in) {
         const tagContainer = document.getElementById('tagContainer');
         const tagInput     = document.getElementById('tagInput');
         const hiddenTags   = document.getElementById('hiddenTags');
-        let tags = [];
+        let tags = hiddenTags && hiddenTags.value ? hiddenTags.value.split(',').map(t => t.trim()).filter(t => t !== '') : [];
 
         function updateTags() {
+            if (!tagContainer || !tagInput) return;
             const tagElements = tags.map((tag, index) => `
                 <span class="bg-brand-blue/10 text-brand-blue text-[11px] font-bold px-2 py-1 rounded flex items-center gap-1">
                     ${escapeHtml(tag)}
-                    <button type="button" onclick="removeTag(${index})" class="hover:text-brand-hover"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" onclick="removeTag(${index})" class="hover:text-brand-hover" title="Remove tag"><i class="fa-solid fa-xmark"></i></button>
                 </span>
             `).join('');
             tagContainer.innerHTML = tagElements;
             // Always re-append the input (innerHTML wipe detaches it)
             tagContainer.appendChild(tagInput);
-            hiddenTags.value = tags.join(',');
+            if (hiddenTags) hiddenTags.value = tags.join(',');
         }
 
         function escapeHtml(str) {
@@ -701,23 +707,32 @@ if (!$session->logged_in) {
         }
 
         function addTagFromInput() {
-            if (!tagInput) return;
-            const tag = tagInput.value.trim().replace(/[,\s]+$/, '');
-            if (tag && !tags.includes(tag)) {
-                tags.push(tag);
-                tagInput.value = '';
-                updateTags();
-                return true;
-            }
+            if (!tagInput) return false;
+            const raw = tagInput.value.trim();
+            if (!raw) return false;
+            // Support comma-separated tags (typed or pasted)
+            const parts = raw.split(',').map(t => t.trim().replace(/[,\s]+$/, '')).filter(t => t.length > 0);
+            let added = false;
+            parts.forEach(tag => {
+                if (tag && !tags.includes(tag)) {
+                    tags.push(tag);
+                    added = true;
+                }
+            });
             tagInput.value = '';
-            return false;
+            if (added) {
+                updateTags();
+            }
+            return added;
         }
 
         if (tagInput) {
             tagInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
-                    e.preventDefault();
-                    addTagFromInput();
+                if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+                    if (this.value.trim().length > 0) {
+                        e.preventDefault();
+                        addTagFromInput();
+                    }
                 } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
                     tags.pop();
                     updateTags();
@@ -727,7 +742,25 @@ if (!$session->logged_in) {
             tagInput.addEventListener('blur', function() {
                 if (this.value.trim()) addTagFromInput();
             });
+            // Auto-split on paste if comma present
+            tagInput.addEventListener('paste', function() {
+                setTimeout(function() {
+                    if (tagInput.value.includes(',')) {
+                        addTagFromInput();
+                    }
+                }, 20);
+            });
         }
+
+        if (tagContainer && tagInput) {
+            tagContainer.addEventListener('click', function(e) {
+                if (e.target === tagContainer) {
+                    tagInput.focus();
+                }
+            });
+        }
+
+        updateTags();
 
         // ── Image Preview ────────────────────────────────────────────────────
         function previewImage(input) {
@@ -865,12 +898,6 @@ if (!$session->logged_in) {
 
                     document.execCommand('insertHTML', false, doc.body.innerHTML);
                 } catch(err) {
-                    const text = e.clipboardData.getData('text/plain');
-                    document.execCommand('insertText', false, text);
-                }
-                updateWordCount();
-                saveDraft();
-            }
                     const text = e.clipboardData.getData('text/plain');
                     document.execCommand('insertText', false, text);
                 }
