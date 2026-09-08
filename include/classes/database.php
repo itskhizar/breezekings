@@ -136,6 +136,9 @@ class MySQLDB
          }
       }
 
+      // Ensure content column is MEDIUMTEXT so long articles and HTML are never truncated
+      @mysqli_query($this->connection, "ALTER TABLE `posts` MODIFY COLUMN `content` MEDIUMTEXT NOT NULL");
+
       // ── Category Architecture: add nav_visible column ────────────────
       $res_nv = mysqli_query($this->connection, "SHOW COLUMNS FROM `categories` LIKE 'nav_visible'");
       if ($res_nv && mysqli_num_rows($res_nv) == 0) {
