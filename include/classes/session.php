@@ -193,6 +193,24 @@ class Session
       if (empty($data['category_id'])) $form->setError("category_id", "* Category is required");
       if (empty($data['content'])) $form->setError("content", "* Content is required");
 
+      // ── Server-side duplicate submission guard ────────────────────────────
+      // Prevent double-posts if the author clicks Save twice or the browser
+      // resends the form on refresh. Check if a post with the same title
+      // was already created in the last 60 seconds by the same author.
+      if (!empty($data['title'])) {
+         $esc_title  = mysqli_real_escape_string($database->connection, trim($data['title']));
+         $author_id  = !empty($this->userinfo['registration_no']) ? mysqli_real_escape_string($database->connection, $this->userinfo['registration_no']) : mysqli_real_escape_string($database->connection, $this->username);
+         $recent_check = $database->query(
+            "SELECT id FROM `posts` WHERE `title` = '$esc_title' AND `author` = '$author_id' AND `created_at` >= NOW() - INTERVAL 60 SECOND LIMIT 1"
+         );
+         if ($recent_check && mysqli_num_rows($recent_check) > 0) {
+            // Duplicate detected — redirect to the existing post instead of creating a new one
+            $dup = mysqli_fetch_assoc($recent_check);
+            header("Location: posts.php?msg=duplicate&dup_id=" . (int)$dup['id']);
+            exit();
+         }
+      }
+
       $featured_image = "";
       if ($thumbnail && $thumbnail['error'] === UPLOAD_ERR_OK) {
          $thumbnail_name = time() . "_" . $thumbnail['name'];

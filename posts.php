@@ -113,6 +113,22 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
+                    <?php elseif ($_GET['msg'] == 'duplicate'): ?>
+                        <?php $dup_id = isset($_GET['dup_id']) ? (int)$_GET['dup_id'] : 0; ?>
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-r flex items-center justify-between gap-3 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                                <p class="text-xs font-semibold text-amber-800">
+                                    Duplicate post prevented &mdash; a post with this title was already created in the last 60 seconds.
+                                    <?php if ($dup_id): ?>
+                                        <a href="edit-post.php?id=<?php echo $dup_id; ?>" class="underline ml-1">Click here to edit the existing post.</a>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                            <button onclick="document.getElementById('statusAlert').style.display='none'" class="text-amber-400 hover:text-amber-600 transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                     <?php elseif ($_GET['msg'] == 'error' || $_GET['msg'] == 'db_error'): ?>
                         <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r flex items-center justify-between gap-3 shadow-sm">
                             <div class="flex items-center gap-3">

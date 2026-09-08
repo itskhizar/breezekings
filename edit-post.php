@@ -158,6 +158,9 @@ if ($session->userlevel < 1 && !$is_author) {
                     <input type="hidden" name="edit_post" value="1">
                     <input type="hidden" name="id" value="<?php echo $id; ?>">
                     <input type="hidden" name="content" id="postContent">
+                    <!-- Double-submit prevention token (unique per page load) -->
+                    <input type="hidden" name="submit_token" id="submitToken" value="">
+                    <input type="hidden" name="form_loaded_at" id="formLoadedAt" value="">
                     
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
@@ -266,9 +269,9 @@ if ($session->userlevel < 1 && !$is_author) {
                                 <!-- Content Area -->
                                 <div class="p-6 flex-1 min-h-[420px] relative">
                                     <div id="editor" class="w-full min-h-[380px] text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true">
-                                        <?php echo $post['content']; ?>
+                                        <?php echo bk_render_content($post['content']); ?>
                                     </div>
-                                    <textarea id="rawHtmlEditor" class="w-full min-h-[380px] p-4 font-mono text-xs text-slate-100 bg-slate-900 rounded-lg outline-none resize-y hidden leading-relaxed" placeholder="Paste or edit raw HTML article content here..."><?php echo htmlspecialchars($post['content']); ?></textarea>
+                                    <textarea id="rawHtmlEditor" class="w-full min-h-[380px] p-4 font-mono text-xs text-slate-100 bg-slate-900 rounded-lg outline-none resize-y hidden leading-relaxed" placeholder="Paste or edit raw HTML article content here..."><?php echo htmlspecialchars(bk_render_content($post['content'])); ?></textarea>
                                 </div>
                                  
                                 <!-- Bottom Status Bar -->
@@ -468,15 +471,46 @@ if ($session->userlevel < 1 && !$is_author) {
     </div>
 
     <script>
+        // ── Double-submission prevention ──────────────────────────────────────
+        let _isSubmitting = false;
+        const _TOKEN_KEY  = 'bk_submit_token_edit_<?php echo $id; ?>';
+
+        function _generateToken() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        }
+
+        (function initSubmitToken() {
+            const tok = _generateToken();
+            const tokenEl = document.getElementById('submitToken');
+            const loadedEl = document.getElementById('formLoadedAt');
+            if (tokenEl) tokenEl.value = tok;
+            if (loadedEl) loadedEl.value = Date.now();
+            try { sessionStorage.setItem(_TOKEN_KEY, tok); } catch(e) {}
+        })();
+
         // ── Form submission helper (Syncs Visual & HTML modes) ──────────────────
         function submitPost() {
-            const editor = document.getElementById('editor');
-            const rawHtml = document.getElementById('rawHtmlEditor');
+            if (_isSubmitting) return;
+
+            const editor      = document.getElementById('editor');
+            const rawHtml     = document.getElementById('rawHtmlEditor');
             const contentInput = document.getElementById('postContent');
+
             if (isHtmlMode) {
                 editor.innerHTML = rawHtml.value;
             }
+
             contentInput.value = editor.innerHTML;
+
+            _isSubmitting = true;
+            document.querySelectorAll('[onclick="submitPost()"]').forEach(function(btn) {
+                btn.disabled = true;
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+                const textNodes = Array.from(btn.childNodes).filter(n => n.nodeType === 3);
+                textNodes.forEach(n => { n.textContent = ' Saving...'; });
+            });
+
             document.getElementById('postForm').submit();
         }
 
@@ -678,9 +712,39 @@ if ($session->userlevel < 1 && !$is_author) {
             });
         }
 
-        // Clean & sanitize pasted content (e.g. from ChatGPT or Google Docs)
+        // Clean & sanitize pasted content — also detects raw HTML pasted in visual mode
         editor.addEventListener('paste', function(e) {
-            const html = e.clipboardData ? e.clipboardData.getData('text/html') : '';
+            const plainText = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+            const html      = e.clipboardData ? e.clipboardData.getData('text/html')  : '';
+
+            // Smart HTML-source detection: if the pasted text looks like raw HTML source code,
+            // auto-switch to HTML mode so it renders correctly instead of showing as literal text.
+            const looksLikeHtmlSource = /^\s*<(!DOCTYPE|html|head|body|p|h[1-6]|div|ul|ol|li|table|section|article|blockquote|pre|code|strong|em|br|hr|a\s|img\s)/i.test(plainText.trim())
+                && (plainText.match(/<\/?(p|h[1-6]|ul|ol|li|div|strong|em|blockquote|pre|code)>/gi) || []).length > 2;
+
+            if (looksLikeHtmlSource && !isHtmlMode) {
+                e.preventDefault();
+                showEditorToast(
+                    '🔍 Raw HTML detected — switched to HTML mode automatically. Review and click Visual to preview.',
+                    'amber'
+                );
+                isHtmlMode = true;
+                const rawHtmlEditor  = document.getElementById('rawHtmlEditor');
+                const htmlModeBtn    = document.getElementById('htmlModeBtn');
+                const htmlModeText   = document.getElementById('htmlModeText');
+                const toolbarButtons = document.querySelectorAll('#editorToolbar button:not(#htmlModeBtn), #headingSelect');
+
+                rawHtmlEditor.value = (rawHtmlEditor.value || '') + plainText;
+                editor.classList.add('hidden');
+                rawHtmlEditor.classList.remove('hidden');
+                if (htmlModeBtn) { htmlModeBtn.classList.add('bg-brand-blue', 'text-white'); htmlModeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100'); }
+                if (htmlModeText) htmlModeText.innerText = 'Visual';
+                toolbarButtons.forEach(btn => { btn.disabled = true; btn.classList.add('opacity-40', 'pointer-events-none'); });
+                rawHtmlEditor.focus();
+                updateWordCount();
+                return;
+            }
+
             if (html) {
                 e.preventDefault();
                 try {
@@ -708,6 +772,20 @@ if ($session->userlevel < 1 && !$is_author) {
                 updateWordCount();
             }
         });
+
+        // ── Editor Toast Notification ────────────────────────────────────────
+        function showEditorToast(message, type) {
+            const existing = document.getElementById('editorToast');
+            if (existing) existing.remove();
+            const colors = { amber: 'bg-amber-50 border-amber-400 text-amber-900', green: 'bg-emerald-50 border-emerald-400 text-emerald-900', red: 'bg-red-50 border-red-400 text-red-900' };
+            const colorClass = colors[type] || colors.amber;
+            const toast = document.createElement('div');
+            toast.id = 'editorToast';
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-start gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium max-w-lg ${colorClass}`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="shrink-0 ml-2 opacity-60 hover:opacity-100 text-lg leading-none">&times;</button>`;
+            document.body.appendChild(toast);
+            setTimeout(function() { if (toast.parentElement) toast.remove(); }, 7000);
+        }
 
         function formatDoc(cmd, value = null) {
             if (isHtmlMode) return;

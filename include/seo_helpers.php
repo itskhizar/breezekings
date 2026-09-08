@@ -225,19 +225,52 @@ if (!function_exists('bk_avatar_url')) {
 if (!function_exists('bk_clean_text')) {
     /**
      * Strips residual editor placeholder phrases (e.g. "Start writing your amazing...", "Start writing your a...")
+     * Also auto-detects and decodes double-encoded HTML (e.g. &lt;p&gt; saved as literal text).
      */
     function bk_clean_text($text) {
         if (empty($text)) return '';
-        // Strip HTML paragraph wrapper if entire paragraph was just the placeholder
+
+        // ── Auto-fix double-encoded HTML ─────────────────────────────────────
+        // Detect if content was accidentally stored as HTML-entity-encoded text
+        // (e.g. the author pasted raw HTML into the visual editor or it got double-escaped)
+        // Heuristic: if it has &lt; or &amp;lt; but no actual <tags>, decode it once
+        $has_entities  = (strpos($text, '&lt;') !== false || strpos($text, '&#60;') !== false);
+        $has_real_tags = (bool) preg_match('/<(p|h[1-6]|ul|ol|li|div|span|strong|em|a|br|img|blockquote|table|tr|td|th|pre|code)\b/i', $text);
+        if ($has_entities && !$has_real_tags) {
+            // Content is entity-encoded; decode it to get proper HTML
+            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+
+        // ── Strip editor placeholder phrases ─────────────────────────────────
         $cleaned = preg_replace('/^<p>\s*Start writing your(?:\s+amazing\s+post\s+content\s+here|\s+amazing|\s+a)?\.{0,3}\s*<\/p>\s*/iu', '', $text);
-        // Strip placeholder prefix inside an opening paragraph tag: <p>Start writing your aInstagram -> <p>Instagram
         $cleaned = preg_replace('/^(<p[^>]*>)\s*Start writing your(?:\s+amazing\s+post\s+content\s+here|\s+amazing|\s+a)?\.{0,3}\s*/iu', '$1', $cleaned);
-        // Strip placeholder prefix at start of plain text or markdown
         $cleaned = preg_replace('/^Start writing your(?:\s+amazing\s+post\s+content\s+here|\s+amazing|\s+a)?\.{0,3}\s*/iu', '', $cleaned);
-        // Strip other common editor placeholder variations
         $cleaned = preg_replace('/^Start writing or paste your article content here\.{0,3}\s*/iu', '', $cleaned);
         $cleaned = preg_replace('/Start writing your\s+amazing\s+post\s+content\s+here\.{0,3}\s*/iu', '', $cleaned);
         return trim($cleaned);
+    }
+}
+
+if (!function_exists('bk_render_content')) {
+    /**
+     * Canonical function to safely render post body HTML.
+     * Cleans placeholder text, fixes entity-encoding, and outputs the content.
+     * Use this everywhere instead of raw echo $post['content'].
+     *
+     * @param  string $content  Raw DB content
+     * @return string           Clean, safe HTML ready for echo
+     */
+    function bk_render_content($content) {
+        if (empty($content)) return '';
+        $clean = bk_clean_text($content);
+
+        // Sanitize: strip script/iframe/object but preserve all safe formatting HTML
+        $clean = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $clean);
+        $clean = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $clean);
+        $clean = preg_replace('/<object\b[^>]*>.*?<\/object>/is', '', $clean);
+        $clean = preg_replace('/\son\w+\s*=\s*["\'][^"\']*["\']/i', '', $clean); // strip inline event handlers
+
+        return $clean;
     }
 }
 

@@ -73,7 +73,13 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
     $site_url_s    = bk_base_url();
     $canonical_url = $site_url_s . $clean_post_rel;
     $og_img_s      = !empty($post['featured_image']) ? $site_url_s . '/images/posts/' . $post['featured_image'] : $site_url_s . '/images/breezekings-icon-red.svg';
-    $post_desc     = htmlspecialchars(bk_clean_text($post['meta_description'] ?: substr(strip_tags($post['content']), 0, 160)));
+    // Build 155-char max meta description (Google truncates at ~155 chars)
+    $raw_desc      = !empty($post['meta_description']) ? $post['meta_description'] : strip_tags(bk_render_content($post['content']));
+    $raw_desc      = trim(preg_replace('/\s+/', ' ', $raw_desc));
+    if (mb_strlen($raw_desc) > 155) {
+        $raw_desc = mb_substr($raw_desc, 0, 152) . '...';
+    }
+    $post_desc     = htmlspecialchars($raw_desc);
     $post_title    = htmlspecialchars($post['title']);
     $post_author   = htmlspecialchars($author_name);
     $category_name = htmlspecialchars($post['category'] ?? 'General');
@@ -81,6 +87,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
     $pub_date_iso  = date('c', strtotime($post['created_at']));
     $mod_date_iso  = !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : $pub_date_iso;
     $word_count    = str_word_count(strip_tags($post['content']));
+    $reading_time  = max(1, ceil($word_count / 200));
     ?>
 
     <!-- Primary SEO Meta Tags -->
@@ -91,6 +98,11 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
     <meta name="author" content="<?php echo $post_author; ?>">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="<?php echo $canonical_url; ?>">
+    <link rel="alternate" hreflang="en" href="<?php echo $canonical_url; ?>">
+    <link rel="alternate" hreflang="x-default" href="<?php echo $canonical_url; ?>">
+    <?php if (!empty($post['featured_image'])): ?>
+    <link rel="preload" as="image" href="<?php echo $og_img_s; ?>" fetchpriority="high">
+    <?php endif; ?>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="article">
@@ -116,7 +128,19 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
     <meta name="twitter:description" content="<?php echo $post_desc; ?>">
     <meta name="twitter:image" content="<?php echo $og_img_s; ?>">
 
-    <!-- Structured Data: BlogPosting & BreadcrumbList -->
+    <!-- Structured Data: BlogPosting, BreadcrumbList, Speakable -->
+    <?php
+    // Build tags array for schema keywords
+    $schema_tags = !empty($post['tags']) ? array_map('trim', explode(',', $post['tags'])) : [];
+    $schema_tags_json = !empty($schema_tags) ? json_encode($schema_tags) : '[]';
+    // Build image object
+    $schema_img = [
+        '@type'  => 'ImageObject',
+        'url'    => $og_img_s,
+        'width'  => 1200,
+        'height' => 630
+    ];
+    ?>
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -132,16 +156,20 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                 },
                 "headline": "<?php echo addslashes($post_title); ?>",
                 "description": "<?php echo addslashes($post_desc); ?>",
-                "image": "<?php echo $og_img_s; ?>",
+                "image": <?php echo json_encode($schema_img); ?>,
                 "datePublished": "<?php echo $pub_date_iso; ?>",
                 "dateModified": "<?php echo $mod_date_iso; ?>",
+                "dateCreated": "<?php echo $pub_date_iso; ?>",
                 "mainEntityOfPage": "<?php echo $canonical_url; ?>",
                 "wordCount": <?php echo (int)$word_count; ?>,
+                "timeRequired": "PT<?php echo $reading_time; ?>M",
                 "articleSection": "<?php echo addslashes($category_name); ?>",
                 "inLanguage": "en-US",
+                "keywords": <?php echo $schema_tags_json; ?>,
                 "author": {
                     "@type": "Person",
-                    "name": "<?php echo addslashes($post_author); ?>"
+                    "name": "<?php echo addslashes($post_author); ?>",
+                    "url": "<?php echo $site_url_s; ?>/about"
                 },
                 "publisher": {
                     "@type": "Organization",
@@ -149,8 +177,23 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                     "url": "<?php echo $site_url_s; ?>",
                     "logo": {
                         "@type": "ImageObject",
-                        "url": "<?php echo $site_url_s; ?>/images/breezekings-icon-red.svg"
-                    }
+                        "url": "<?php echo $site_url_s; ?>/images/breezekings-icon-red.svg",
+                        "width": 60,
+                        "height": 60
+                    },
+                    "sameAs": [
+                        "https://twitter.com/breezekings",
+                        "https://www.facebook.com/breezekings"
+                    ]
+                },
+                "interactionStatistic": {
+                    "@type": "InteractionCounter",
+                    "interactionType": "https://schema.org/ReadAction",
+                    "userInteractionCount": <?php echo (int)($post['views'] ?? 0); ?>
+                },
+                "speakable": {
+                    "@type": "SpeakableSpecification",
+                    "cssSelector": [".article-content h2", ".article-content h3", ".article-content p"]
                 }
             },
             {
@@ -176,6 +219,21 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                         "item": "<?php echo $canonical_url; ?>"
                     }
                 ]
+            },
+            {
+                "@type": "WebSite",
+                "@id": "<?php echo $site_url_s; ?>/#website",
+                "url": "<?php echo $site_url_s; ?>/",
+                "name": "Breezekings",
+                "description": "In-depth reporting, technology insights, and cultural analysis.",
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": "<?php echo $site_url_s; ?>/?q={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                }
             }
         ]
     }
@@ -397,9 +455,45 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
             line-height: 1;
             font-family: 'Playfair Display', serif;
         }
+
+        /* Reading progress bar */
+        #reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #e12b38, #c5202b);
+            z-index: 9999;
+            transition: width 0.1s ease;
+        }
+
+        /* Share bar */
+        .share-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .share-btn:hover { transform: translateY(-1px); }
+        .share-btn-twitter  { background: #1da1f2; color: #fff; }
+        .share-btn-facebook { background: #1877f2; color: #fff; }
+        .share-btn-linkedin { background: #0077b5; color: #fff; }
+        .share-btn-copy     { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+        .share-btn-copy:hover { background: #e2e8f0; }
     </style>
 </head>
 <body class="text-slate-800 antialiased selection:bg-crimson-500 selection:text-white">
+
+    <!-- Reading Progress Bar -->
+    <div id="reading-progress" role="progressbar" aria-label="Reading progress"></div>
 
     <?php include 'include/frontend_header.php'; ?>
 
@@ -463,8 +557,27 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
                 <!-- Right Content Area (70%) -->
                 <main class="lg:w-[70%] flex-1">
                     
-                    <div class="article-content max-w-4xl mx-auto">
-                        <?php echo bk_clean_text($post['content']); ?>
+                    <div class="article-content max-w-4xl mx-auto" id="article-body">
+                        <?php echo bk_render_content($post['content']); ?>
+                    </div>
+
+                    <!-- Social Share Bar -->
+                    <div class="mt-10 pt-8 border-t border-slate-200">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Share this article</p>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="https://twitter.com/intent/tweet?url=<?php echo urlencode($canonical_url); ?>&text=<?php echo urlencode($post_title); ?>&via=breezekings" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-twitter" aria-label="Share on X/Twitter">
+                                <i class="fa-brands fa-x-twitter"></i> X / Twitter
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode($canonical_url); ?>" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-facebook" aria-label="Share on Facebook">
+                                <i class="fa-brands fa-facebook-f"></i> Facebook
+                            </a>
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?php echo urlencode($canonical_url); ?>" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-linkedin" aria-label="Share on LinkedIn">
+                                <i class="fa-brands fa-linkedin-in"></i> LinkedIn
+                            </a>
+                            <button onclick="copyArticleUrl()" class="share-btn share-btn-copy" id="copyUrlBtn" aria-label="Copy article link">
+                                <i class="fa-regular fa-copy"></i> Copy Link
+                            </button>
+                        </div>
                     </div>
                         
 
@@ -803,6 +916,71 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? null, $author_name
 
     <!-- Breezekings Global Footer -->
     <?php include 'include/frontend_footer.php'; ?>
+
+    <script>
+    // ── Reading Progress Bar ─────────────────────────────────────────────
+    (function() {
+        const bar     = document.getElementById('reading-progress');
+        const article = document.getElementById('article-body');
+        if (!bar || !article) return;
+
+        function updateProgress() {
+            const articleTop    = article.getBoundingClientRect().top + window.scrollY;
+            const articleBottom = articleTop + article.offsetHeight;
+            const scrolled      = window.scrollY + window.innerHeight;
+            const total         = articleBottom - articleTop;
+            const progress      = Math.min(100, Math.max(0, ((scrolled - articleTop) / total) * 100));
+            bar.style.width = progress + '%';
+        }
+
+        window.addEventListener('scroll', updateProgress, { passive: true });
+        updateProgress();
+    })();
+
+    // ── Copy Article URL ─────────────────────────────────────────────────
+    function copyArticleUrl() {
+        const url = window.location.href;
+        const btn = document.getElementById('copyUrlBtn');
+        if (!btn) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function() {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                btn.style.background = '#d1fae5';
+                btn.style.color = '#065f46';
+                setTimeout(function() {
+                    btn.innerHTML = original;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            }).catch(function() {
+                fallbackCopy(url, btn);
+            });
+        } else {
+            fallbackCopy(url, btn);
+        }
+    }
+
+    function fallbackCopy(url, btn) {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+            document.execCommand('copy');
+            if (btn) {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(function() { btn.innerHTML = original; }, 2000);
+            }
+        } catch(e) {}
+        document.body.removeChild(ta);
+    }
+    </script>
 
 </body>
 </html>

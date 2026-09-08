@@ -165,6 +165,9 @@ if (!$session->logged_in) {
                 <form action="process.php" method="POST" enctype="multipart/form-data" id="postForm">
                     <input type="hidden" name="add_post" value="1">
                     <input type="hidden" name="content" id="postContent">
+                    <!-- Double-submit prevention token (unique per page load) -->
+                    <input type="hidden" name="submit_token" id="submitToken" value="">
+                    <input type="hidden" name="form_loaded_at" id="formLoadedAt" value="">
                     
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
@@ -476,15 +479,63 @@ if (!$session->logged_in) {
     </div>
 
     <script>
+        // ── Double-submission prevention ──────────────────────────────────────
+        let _isSubmitting = false;
+        const _TOKEN_KEY  = 'bk_submit_token_create';
+
+        function _generateToken() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        }
+
+        // Stamp page-load time and a unique token when page loads
+        (function initSubmitToken() {
+            const tok = _generateToken();
+            const loadedAt = Date.now();
+            const tokenEl = document.getElementById('submitToken');
+            const loadedEl = document.getElementById('formLoadedAt');
+            if (tokenEl) tokenEl.value = tok;
+            if (loadedEl) loadedEl.value = loadedAt;
+            // Store the token so the server can check it was not reused
+            try { sessionStorage.setItem(_TOKEN_KEY, tok); } catch(e) {}
+        })();
+
         // ── Form submission helper (Syncs Visual & HTML modes) ──────────────────
         function submitPost() {
-            const editor = document.getElementById('editor');
-            const rawHtml = document.getElementById('rawHtmlEditor');
+            // Prevent double-submission
+            if (_isSubmitting) {
+                return;
+            }
+
+            const editor      = document.getElementById('editor');
+            const rawHtml     = document.getElementById('rawHtmlEditor');
             const contentInput = document.getElementById('postContent');
+
+            // Always sync the active editor to the hidden input
             if (isHtmlMode) {
                 editor.innerHTML = rawHtml.value;
             }
+
+            const finalContent = editor.innerHTML.trim();
+            if (!finalContent || finalContent === '<br>' || finalContent === '<p><br></p>') {
+                alert('Please add content before saving the post.');
+                return;
+            }
+
             contentInput.value = editor.innerHTML;
+
+            // Disable all submit buttons to prevent double-click
+            _isSubmitting = true;
+            document.querySelectorAll('[onclick="submitPost()"]').forEach(function(btn) {
+                btn.disabled = true;
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+                const textNodes = Array.from(btn.childNodes).filter(n => n.nodeType === 3);
+                textNodes.forEach(n => { n.textContent = ' Saving...'; });
+            });
+
+            // Clear draft since we're officially submitting
+            try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+
             document.getElementById('postForm').submit();
         }
 
@@ -706,8 +757,47 @@ if (!$session->logged_in) {
         }
 
         // Clean & sanitize pasted content (e.g. from ChatGPT or Google Docs)
+        // ALSO: detect if author pastes raw HTML source code into the visual editor
         editor.addEventListener('paste', function(e) {
-            const html = e.clipboardData ? e.clipboardData.getData('text/html') : '';
+            const plainText = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+            const html      = e.clipboardData ? e.clipboardData.getData('text/html')  : '';
+
+            // ── Smart HTML-source detection ────────────────────────────────────
+            // If the plain text clipboard looks like raw HTML (starts with < and has tags)
+            // but the author is in visual mode, auto-switch to HTML mode and paste there.
+            const looksLikeHtmlSource = /^\s*<(!DOCTYPE|html|head|body|p|h[1-6]|div|ul|ol|li|table|section|article|blockquote|pre|code|strong|em|br|hr|a\s|img\s)/i.test(plainText.trim())
+                && (plainText.match(/<\/?(p|h[1-6]|ul|ol|li|div|strong|em|blockquote|pre|code)>/gi) || []).length > 2;
+
+            if (looksLikeHtmlSource && !isHtmlMode) {
+                e.preventDefault();
+                // Show an informative toast
+                showEditorToast(
+                    '🔍 Raw HTML detected — switched to HTML mode automatically. Review and click Visual to preview.',
+                    'amber'
+                );
+                // Switch to HTML mode and paste there
+                isHtmlMode = true;
+                const rawHtmlEditor = document.getElementById('rawHtmlEditor');
+                const htmlModeBtn   = document.getElementById('htmlModeBtn');
+                const htmlModeText  = document.getElementById('htmlModeText');
+                const toolbarButtons = document.querySelectorAll('#editorToolbar button:not(#htmlModeBtn), #headingSelect');
+
+                rawHtmlEditor.value = (rawHtmlEditor.value || '') + plainText;
+                editor.classList.add('hidden');
+                rawHtmlEditor.classList.remove('hidden');
+                if (htmlModeBtn) {
+                    htmlModeBtn.classList.add('bg-brand-blue', 'text-white');
+                    htmlModeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+                }
+                if (htmlModeText) htmlModeText.innerText = 'Visual';
+                toolbarButtons.forEach(btn => { btn.disabled = true; btn.classList.add('opacity-40', 'pointer-events-none'); });
+                rawHtmlEditor.focus();
+                updateWordCount();
+                saveDraft();
+                return;
+            }
+
+            // ── Standard rich-text paste (from Google Docs, Word, etc.) ──────────
             if (html) {
                 e.preventDefault();
                 try {
@@ -737,6 +827,27 @@ if (!$session->logged_in) {
                 saveDraft();
             }
         });
+
+        // ── Editor Toast Notification ────────────────────────────────────────
+        function showEditorToast(message, type) {
+            const existing = document.getElementById('editorToast');
+            if (existing) existing.remove();
+
+            const colors = {
+                amber: 'bg-amber-50 border-amber-400 text-amber-900',
+                green: 'bg-emerald-50 border-emerald-400 text-emerald-900',
+                red:   'bg-red-50 border-red-400 text-red-900'
+            };
+            const colorClass = colors[type] || colors.amber;
+
+            const toast = document.createElement('div');
+            toast.id = 'editorToast';
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-start gap-3 px-5 py-3.5 rounded-xl shadow-xl border text-sm font-medium max-w-lg ${colorClass}`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="shrink-0 ml-2 opacity-60 hover:opacity-100 text-lg leading-none">&times;</button>`;
+            document.body.appendChild(toast);
+
+            setTimeout(function() { if (toast.parentElement) toast.remove(); }, 7000);
+        }
 
         function formatDoc(cmd, value = null) {
             if (isHtmlMode) return;
@@ -1238,7 +1349,12 @@ if (!$session->logged_in) {
         setInterval(saveDraft, 15000);
         editor.addEventListener('input', saveDraft);
 
-        document.getElementById('postForm').addEventListener('submit', function() {
+        document.getElementById('postForm').addEventListener('submit', function(e) {
+            // Final safety: sync content and prevent double-submit via form submit event
+            if (_isSubmitting) {
+                e.preventDefault();
+                return;
+            }
             if (isHtmlMode) editor.innerHTML = rawHtmlEditor.value;
             document.getElementById('postContent').value = editor.innerHTML;
             try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
