@@ -270,6 +270,10 @@ if (!$session->logged_in) {
 
                                 <!-- Content Area -->
                                 <div class="p-6 flex-1 min-h-[420px] relative">
+                                    <div id="htmlModeNotice" class="hidden mb-3 p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs flex items-center gap-2 font-sans">
+                                        <i class="fa-solid fa-code text-amber-600 shrink-0"></i>
+                                        <span><strong>HTML Mode Active:</strong> You are editing raw HTML code directly. Use proper markup (&lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;). Click <strong>Visual</strong> to preview before saving.</span>
+                                    </div>
                                     <div id="editor" class="w-full min-h-[380px] text-slate-800 outline-none editor-content text-base leading-relaxed font-serif" contenteditable="true" data-placeholder="Start writing or paste your article content here..."></div>
                                     <textarea id="rawHtmlEditor" class="w-full min-h-[380px] p-4 font-mono text-xs text-slate-100 bg-slate-900 rounded-lg outline-none resize-y hidden leading-relaxed" placeholder="Paste or edit raw HTML article content here..."></textarea>
                                 </div>
@@ -1194,6 +1198,7 @@ if (!$session->logged_in) {
 
             if (isHtmlMode) {
                 rawHtmlEditor.value = editor.innerHTML;
+                const notice = document.getElementById('htmlModeNotice'); if (notice) notice.classList.remove('hidden');
                 editor.classList.add('hidden');
                 rawHtmlEditor.classList.remove('hidden');
                 htmlModeBtn.classList.add('bg-brand-blue', 'text-white');
@@ -1203,6 +1208,7 @@ if (!$session->logged_in) {
                 rawHtmlEditor.focus();
             } else {
                 editor.innerHTML = rawHtmlEditor.value;
+                const notice = document.getElementById('htmlModeNotice'); if (notice) notice.classList.add('hidden');
                 rawHtmlEditor.classList.add('hidden');
                 editor.classList.remove('hidden');
                 htmlModeBtn.classList.remove('bg-brand-blue', 'text-white');

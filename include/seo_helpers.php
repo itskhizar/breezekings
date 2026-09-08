@@ -221,20 +221,19 @@ if (!function_exists('bk_avatar_url')) {
 
 if (!function_exists('bk_clean_text')) {
     /**
-     * Strips residual editor placeholder phrases (e.g. "Start writing your amazing...", "Start writing your a...")
-     * Also auto-detects and decodes double-encoded HTML (e.g. &lt;p&gt; saved as literal text).
+     * Strips residual editor placeholder phrases, Word/Docs fragment markers,
+     * and auto-decodes HTML entities if tags were stored escaped.
      */
     function bk_clean_text($text) {
         if (empty($text)) return '';
 
+        // ── Strip Word / Google Docs fragment markers ───────────────────────
+        $text = preg_replace('/<!--(?:Start|End)Fragment-->/i', '', $text);
+
         // ── Auto-fix double-encoded HTML ─────────────────────────────────────
-        // Detect if content was accidentally stored as HTML-entity-encoded text
-        // (e.g. the author pasted raw HTML into the visual editor or it got double-escaped)
-        // Heuristic: if it has &lt; or &amp;lt; but no actual <tags>, decode it once
-        $has_entities  = (strpos($text, '&lt;') !== false || strpos($text, '&#60;') !== false);
-        $has_real_tags = (bool) preg_match('/<(p|h[1-6]|ul|ol|li|div|span|strong|em|a|br|img|blockquote|table|tr|td|th|pre|code)\b/i', $text);
-        if ($has_entities && !$has_real_tags) {
-            // Content is entity-encoded; decode it to get proper HTML
+        // Detect if content was stored as HTML-entity-encoded text (e.g. &lt;p&gt;, &lt;h2&gt;)
+        // If it contains encoded HTML tags, decode them to get real HTML elements
+        if (preg_match('/&(?:lt|#60);(p|h[1-6]|ul|ol|li|div|span|strong|em|a|br|img|blockquote|table|style)\b/i', $text)) {
             $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
 
@@ -251,8 +250,8 @@ if (!function_exists('bk_clean_text')) {
 if (!function_exists('bk_render_content')) {
     /**
      * Canonical function to safely render post body HTML.
-     * Cleans placeholder text, fixes entity-encoding, and outputs the content.
-     * Use this everywhere instead of raw echo $post['content'].
+     * Cleans placeholder text, fixes entity-encoding, strips rogue <style> or script tags,
+     * ensures proper paragraph structuring, and outputs the content.
      *
      * @param  string $content  Raw DB content
      * @return string           Clean, safe HTML ready for echo
@@ -261,11 +260,22 @@ if (!function_exists('bk_render_content')) {
         if (empty($content)) return '';
         $clean = bk_clean_text($content);
 
-        // Sanitize: strip script/iframe/object but preserve all safe formatting HTML
+        // Strip rogue <style> tags (such as pasted CSS styles) that break page layout
+        $clean = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $clean);
+
+        // Sanitize: strip script/iframe/object but preserve safe HTML
         $clean = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $clean);
         $clean = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $clean);
         $clean = preg_replace('/<object\b[^>]*>.*?<\/object>/is', '', $clean);
-        $clean = preg_replace('/\son\w+\s*=\s*["\'][^"\']*["\']/i', '', $clean); // strip inline event handlers
+        $clean = preg_replace('/\son\w+\s*=\s*["\'][^"\']*["\']/i', '', $clean);
+
+        // Convert multiple consecutive <br> into proper paragraph tags for .article-content styling
+        $clean = preg_replace('/(?:<br\s*\/?>\s*){2,}/i', "</p><p>", $clean);
+
+        // Auto-wrap bare text blocks into <p> if missing paragraph tags
+        if (!preg_match('/<(p|h[1-6]|ul|ol|blockquote|table|div)\b/i', $clean)) {
+            $clean = '<p>' . preg_replace('/\n\s*\n/', '</p><p>', nl2br($clean)) . '</p>';
+        }
 
         return $clean;
     }
