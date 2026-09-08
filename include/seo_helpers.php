@@ -281,3 +281,76 @@ if (!function_exists('bk_render_content')) {
     }
 }
 
+if (!function_exists('bk_process_uploaded_image')) {
+    /**
+     * Resizes and converts uploaded image to WebP if GD is supported,
+     * or safely saves the original file if GD is unavailable.
+     *
+     * @param array  $file     $_FILES entry
+     * @param string $dest_dir Target folder relative to root (e.g. 'images/posts/')
+     * @param int    $max_w    Max width in pixels (default 1600)
+     * @return string|false    Saved filename or false on failure
+     */
+    function bk_process_uploaded_image($file, $dest_dir = 'images/posts/', $max_w = 1600) {
+        if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            return false;
+        }
+
+        $dest_dir = rtrim($dest_dir, '/') . '/';
+        if (!is_dir($dest_dir)) {
+            @mkdir($dest_dir, 0755, true);
+        }
+
+        $orig_name  = pathinfo($file['name'], PATHINFO_FILENAME);
+        $ext        = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $clean_name = bk_slugify($orig_name);
+        $prefix     = time();
+
+        // Check if GD and WebP conversion are available
+        if (function_exists('imagecreatefromjpeg') && function_exists('imagewebp')) {
+            $src_img = null;
+            if ($ext === 'jpg' || $ext === 'jpeg') {
+                $src_img = @imagecreatefromjpeg($file['tmp_name']);
+            } elseif ($ext === 'png' && function_exists('imagecreatefrompng')) {
+                $src_img = @imagecreatefrompng($file['tmp_name']);
+            } elseif ($ext === 'webp' && function_exists('imagecreatefromwebp')) {
+                $src_img = @imagecreatefromwebp($file['tmp_name']);
+            }
+
+            if ($src_img) {
+                $w = imagesx($src_img);
+                $h = imagesy($src_img);
+
+                if ($w > $max_w) {
+                    $new_w = $max_w;
+                    $new_h = (int)round(($h / $w) * $new_w);
+                    $resized = imagecreatetruecolor($new_w, $new_h);
+                    imagealphablending($resized, false);
+                    imagesavealpha($resized, true);
+                    imagecopyresampled($resized, $src_img, 0, 0, 0, 0, $new_w, $new_h, $w, $h);
+                    imagedestroy($src_img);
+                    $src_img = $resized;
+                }
+
+                $webp_filename = "{$prefix}_{$clean_name}.webp";
+                $target_file   = $dest_dir . $webp_filename;
+
+                if (@imagewebp($src_img, $target_file, 85)) {
+                    imagedestroy($src_img);
+                    return $webp_filename;
+                }
+                imagedestroy($src_img);
+            }
+        }
+
+        // Fallback: standard file move
+        $saved_filename = "{$prefix}_{$clean_name}.{$ext}";
+        $target_file    = $dest_dir . $saved_filename;
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
+            return $saved_filename;
+        }
+
+        return false;
+    }
+}
+

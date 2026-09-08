@@ -213,11 +213,10 @@ class Session
 
       $featured_image = "";
       if ($thumbnail && $thumbnail['error'] === UPLOAD_ERR_OK) {
-         $thumbnail_name = time() . "_" . $thumbnail['name'];
-         $target_path = "images/posts/" . $thumbnail_name;
-         if (!is_dir("images/posts")) mkdir("images/posts", 0777, true);
-         if (move_uploaded_file($thumbnail['tmp_name'], $target_path)) {
-            $featured_image = $thumbnail_name;
+         require_once __DIR__ . "/../seo_helpers.php";
+         $uploaded = bk_process_uploaded_image($thumbnail, 'images/posts/');
+         if ($uploaded) {
+            $featured_image = $uploaded;
          }
       }
 
@@ -279,11 +278,11 @@ class Session
 
       $featured_image = "";
       if ($thumbnail && $thumbnail['error'] === UPLOAD_ERR_OK) {
-         $thumbnail_name = time() . "_" . $thumbnail['name'];
-         $target_path = "images/posts/" . $thumbnail_name;
-         if (move_uploaded_file($thumbnail['tmp_name'], $target_path)) {
-            $featured_image = $thumbnail_name;
-            $post_data['featured_image'] = $thumbnail_name;
+         require_once __DIR__ . "/../seo_helpers.php";
+         $uploaded = bk_process_uploaded_image($thumbnail, 'images/posts/');
+         if ($uploaded) {
+            $featured_image = $uploaded;
+            $post_data['featured_image'] = $uploaded;
          }
       }
 
