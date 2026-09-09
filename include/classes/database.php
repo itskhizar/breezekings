@@ -159,8 +159,20 @@ class MySQLDB
       // Permanently clean up ghost categories (Games, Sports, Fashion) with 0 posts
       mysqli_query($this->connection, "DELETE c FROM `categories` c LEFT JOIN `posts` p ON c.id = p.category_id WHERE LOWER(c.category) IN ('games', 'sports', 'fashion') AND p.id IS NULL");
 
-      // Migration: clean up legacy lowercase names and ensure display_name preserves user casing
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Admin' WHERE `username` = 'admin' AND (`display_name` = 'admin' OR `display_name` IS NULL OR `display_name` = '')");
+      // ── Ensure post_views_log table exists for daily analytics tracking ──
+      $q = "CREATE TABLE IF NOT EXISTS `post_views_log` (
+         `id` bigint(20) NOT NULL AUTO_INCREMENT,
+         `post_id` int(11) NOT NULL,
+         `view_date` date NOT NULL,
+         `views_count` int(11) NOT NULL DEFAULT 1,
+         PRIMARY KEY (`id`),
+         UNIQUE KEY `post_view_date` (`post_id`, `view_date`),
+         KEY `idx_view_date` (`view_date`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+      mysqli_query($this->connection, $q);
+
+      // Migration: clean up legacy names and set professional author display_name for admin
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `username` = 'admin' AND (`display_name` = 'Admin' OR `display_name` = 'admin' OR `display_name` IS NULL OR `display_name` = '')");
       mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `username` = 'khizar.ahmad' AND (`display_name` = 'khizar.ahmad' OR `display_name` IS NULL OR `display_name` = '')");
       mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Waseem Azam' WHERE `username` = 'azam.waseem' AND (`display_name` = 'azam.waseem' OR `display_name` IS NULL OR `display_name` = '')");
       mysqli_query($this->connection, "UPDATE `users` SET `display_name` = CONCAT(UPPER(SUBSTRING(REPLACE(username, '.', ' '), 1, 1)), SUBSTRING(REPLACE(username, '.', ' '), 2)) WHERE (`display_name` IS NULL OR `display_name` = '')");
@@ -235,10 +247,23 @@ class MySQLDB
       if ($is_featured === 1) {
          mysqli_query($this->connection, "UPDATE `posts` SET `is_featured` = 0");
       }
-      $published_at = ($status == 'Published') ? "NOW()" : "NULL";
 
-      $q = "INSERT INTO `posts` (`title`, `slug`, `content`, `excerpt`, `category_id`, `author`, `status`, `featured_image`, `meta_title`, `meta_description`, `tags`, `is_featured`, `published_at`) 
-            VALUES ('$title', '$slug', '$content', '$excerpt', '$category_id', '$author', '$status', '$featured_image', '$meta_title', '$meta_description', '$tags', '$is_featured', $published_at)";
+      // Support custom/scheduled/backdated publication date
+      $published_at_val = "NULL";
+      $created_at_val = "CURRENT_TIMESTAMP";
+      if (!empty($data['published_at'])) {
+         $p_time = strtotime($data['published_at']);
+         if ($p_time !== false && $p_time > 0) {
+            $fmt_time = date('Y-m-d H:i:s', $p_time);
+            $published_at_val = "'$fmt_time'";
+            $created_at_val = "'$fmt_time'";
+         }
+      } elseif ($status == 'Published') {
+         $published_at_val = "NOW()";
+      }
+
+      $q = "INSERT INTO `posts` (`title`, `slug`, `content`, `excerpt`, `category_id`, `author`, `status`, `featured_image`, `meta_title`, `meta_description`, `tags`, `is_featured`, `published_at`, `created_at`) 
+            VALUES ('$title', '$slug', '$content', '$excerpt', '$category_id', '$author', '$status', '$featured_image', '$meta_title', '$meta_description', '$tags', '$is_featured', $published_at_val, $created_at_val)";
 
       return mysqli_query($this->connection, $q);
    }
@@ -274,8 +299,15 @@ class MySQLDB
          $img_sql = ", `featured_image` = '$featured_image'";
       }
 
+      // Support custom publication date and keep created_at in sync
       $pub_sql = "";
-      if ($status === 'Published') {
+      if (!empty($data['published_at'])) {
+         $p_time = strtotime($data['published_at']);
+         if ($p_time !== false && $p_time > 0) {
+            $fmt_time = date('Y-m-d H:i:s', $p_time);
+            $pub_sql = ", `published_at` = '$fmt_time', `created_at` = '$fmt_time'";
+         }
+      } elseif ($status === 'Published') {
          $pub_sql = ", `published_at` = IFNULL(`published_at`, NOW())";
       }
 
@@ -339,7 +371,7 @@ class MySQLDB
          $q .= " AND p.status = '$status'";
       }
 
-      $q .= " ORDER BY p.created_at DESC";
+      $q .= " ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC";
       return mysqli_query($this->connection, $q);
    }
 
@@ -363,7 +395,7 @@ class MySQLDB
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE p.category_id = $cat_id AND p.is_deleted = 0 $status_sql
-            ORDER BY p.created_at DESC";
+            ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC";
       return mysqli_query($this->connection, $q);
    }
 
@@ -388,7 +420,7 @@ class MySQLDB
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
             WHERE (p.title LIKE '%$query%' OR p.content LIKE '%$query%' OR p.tags LIKE '%$query%' OR p.slug LIKE '%$query%') 
             $status_sql AND p.is_deleted = 0
-            ORDER BY p.created_at DESC";
+            ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC";
       return mysqli_query($this->connection, $q);
    }
 
@@ -407,7 +439,7 @@ class MySQLDB
             LEFT JOIN categories c ON p.category_id = c.id 
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.status = 'Published' AND p.is_deleted = 0
-            ORDER BY p.views DESC, p.created_at DESC LIMIT $limit";
+            ORDER BY p.views DESC, COALESCE(p.published_at, p.created_at) DESC LIMIT $limit";
       return mysqli_query($this->connection, $q);
    }
 
@@ -429,7 +461,7 @@ class MySQLDB
             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
             WHERE p.category_id = $category_id AND p.id != $exclude_id 
             AND p.status = 'Published' AND p.is_deleted = 0
-            ORDER BY p.created_at DESC LIMIT $limit";
+            ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC LIMIT $limit";
       return mysqli_query($this->connection, $q);
    }
 
@@ -442,7 +474,13 @@ class MySQLDB
    function increment_views($post_id)
    {
       $post_id = (int) $post_id;
-      return mysqli_query($this->connection, "UPDATE posts SET views = views + 1 WHERE id = $post_id");
+      if ($post_id <= 0) return false;
+
+      // 1. Increment cumulative views while preserving updated_at (avoids triggering MySQL ON UPDATE CURRENT_TIMESTAMP)
+      @mysqli_query($this->connection, "UPDATE `posts` SET `views` = `views` + 1, `updated_at` = `updated_at` WHERE `id` = $post_id");
+
+      // 2. Log daily view into post_views_log for accurate analytics tracking
+      return @mysqli_query($this->connection, "INSERT INTO `post_views_log` (`post_id`, `view_date`, `views_count`) VALUES ($post_id, CURDATE(), 1) ON DUPLICATE KEY UPDATE `views_count` = `views_count` + 1");
    }
 
    /* ---------- Category Methods ---------- */

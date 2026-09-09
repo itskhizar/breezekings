@@ -32,37 +32,37 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' . "\n";
 echo '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
 
-$today = date('Y-m-d');
-
-// Static pages (clean URLs)
-$static_pages = [
-    ['url' => '/',                'freq' => 'daily',   'priority' => '1.0'],
-    ['url' => '/about',           'freq' => 'monthly', 'priority' => '0.8'],
-    ['url' => '/contact',         'freq' => 'monthly', 'priority' => '0.8'],
-    ['url' => '/privacy-policy',  'freq' => 'yearly',  'priority' => '0.3'],
-    ['url' => '/termsofservices', 'freq' => 'yearly',  'priority' => '0.3'],
-];
-
-foreach ($static_pages as $page) {
-    echo "  <url>\n";
-    echo "    <loc>" . htmlspecialchars($site_url . $page['url']) . "</loc>\n";
-    echo "    <lastmod>" . $today . "</lastmod>\n";
-    echo "    <changefreq>" . $page['freq'] . "</changefreq>\n";
-    echo "    <priority>" . $page['priority'] . "</priority>\n";
-    echo "  </url>\n";
+// Latest post date for fallback
+$latest_post_date = '2026-09-08';
+if ($db_conn) {
+    $latest_q = @mysqli_query($db_conn, "SELECT MAX(COALESCE(published_at, created_at)) as latest_date FROM posts WHERE status = 'Published' AND is_deleted = 0");
+    if ($latest_q && $row = mysqli_fetch_assoc($latest_q)) {
+        if (!empty($row['latest_date'])) {
+            $latest_post_date = date('Y-m-d', strtotime($row['latest_date']));
+        }
+    }
 }
 
-// Categories
+// Categories with published posts
 if ($db_conn) {
-    $cats_query = @mysqli_query($db_conn, "SELECT id, category, created_at FROM categories ORDER BY id ASC");
-    if ($cats_query) {
-        while ($cat = mysqli_fetch_assoc($cats_query)) {
+    $cats_res = @mysqli_query($db_conn,
+        "SELECT c.id, c.category,
+                MAX(COALESCE(p.published_at, p.created_at)) as latest_post_date,
+                COUNT(p.id) as post_count
+         FROM categories c
+         INNER JOIN posts p ON p.category_id = c.id AND p.status = 'Published' AND p.is_deleted = 0
+         GROUP BY c.id, c.category
+         HAVING post_count > 0
+         ORDER BY c.id ASC"
+    );
+    if ($cats_res) {
+        while ($cat = mysqli_fetch_assoc($cats_res)) {
             $cat_url = $site_url . bk_category_url($cat['id'], $cat['category']);
-            $cat_date = !empty($cat['created_at']) ? date('Y-m-d', strtotime($cat['created_at'])) : $today;
+            $cat_mod = !empty($cat['latest_post_date']) ? date('Y-m-d', strtotime($cat['latest_post_date'])) : $latest_post_date;
             echo "  <url>\n";
             echo "    <loc>" . htmlspecialchars($cat_url) . "</loc>\n";
-            echo "    <lastmod>" . $cat_date . "</lastmod>\n";
-            echo "    <changefreq>daily</changefreq>\n";
+            echo "    <lastmod>" . $cat_mod . "</lastmod>\n";
+            echo "    <changefreq>weekly</changefreq>\n";
             echo "    <priority>0.8</priority>\n";
             echo "  </url>\n";
         }
@@ -73,25 +73,27 @@ if ($db_conn) {
 if ($db_conn) {
     $posts_query = @mysqli_query(
         $db_conn,
-        "SELECT id, title, slug, featured_image, updated_at, created_at
+        "SELECT id, title, slug, featured_image, published_at, created_at, updated_at
          FROM posts
          WHERE status = 'Published' AND is_deleted = 0
-         ORDER BY created_at DESC"
+         ORDER BY COALESCE(published_at, created_at) DESC, id DESC"
     );
     if ($posts_query) {
         while ($post = mysqli_fetch_assoc($posts_query)) {
             $post_url = $site_url . bk_post_url($post['id'], $post['title'], $post['slug']);
-            $last_mod = !empty($post['updated_at']) ? $post['updated_at'] : $post['created_at'];
-            $last_mod_fmt = !empty($last_mod) ? date('Y-m-d', strtotime($last_mod)) : $today;
+            $pub_ts = !empty($post['published_at']) ? strtotime($post['published_at']) : strtotime($post['created_at']);
+            $upd_ts = !empty($post['updated_at']) ? strtotime($post['updated_at']) : $pub_ts;
+            $mod_ts = ($upd_ts && ($upd_ts - $pub_ts) > 86400) ? $upd_ts : $pub_ts;
+            $post_date = date('Y-m-d', $mod_ts ?: time());
 
             echo "  <url>\n";
             echo "    <loc>" . htmlspecialchars($post_url) . "</loc>\n";
-            echo "    <lastmod>" . $last_mod_fmt . "</lastmod>\n";
-            echo "    <changefreq>weekly</changefreq>\n";
+            echo "    <lastmod>" . $post_date . "</lastmod>\n";
+            echo "    <changefreq>monthly</changefreq>\n";
             echo "    <priority>0.9</priority>\n";
 
             if (!empty($post['featured_image'])) {
-                $img_url = $site_url . '/images/posts/' . $post['featured_image'];
+                $img_url = $site_url . bk_thumb_url($post['featured_image']);
                 echo "    <image:image>\n";
                 echo "      <image:loc>" . htmlspecialchars($img_url) . "</image:loc>\n";
                 echo "      <image:title>" . htmlspecialchars($post['title']) . "</image:title>\n";

@@ -329,7 +329,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                      WHERE p.status = 'Published'
                                        AND p.is_deleted = 0
                                        AND p.is_featured = 1
-                                     ORDER BY p.created_at DESC
+                                     ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
                                      LIMIT 1";
                     $featured_posts = $database->query($featured_sql);
                     if (mysqli_num_rows($featured_posts) === 0) {
@@ -339,23 +339,24 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                          WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
                                          WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                                          WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
-                                         ELSE 'Admin'
+                                         ELSE 'BreezeKings Editorial'
                                      END as author_name,
                              u.profile_image as author_avatar
                              FROM posts p
                              LEFT JOIN categories c ON p.category_id = c.id
                              LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
                              WHERE p.status = 'Published' AND p.is_deleted = 0
-                             ORDER BY p.created_at DESC LIMIT 1"
+                             ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC LIMIT 1"
                         );
                     }
 
                     if ($hero = mysqli_fetch_assoc($featured_posts)):
                         $hero_thumb = bk_thumb_url($hero['featured_image']);
-                        $hero_date_fmt = date('M d, Y', strtotime($hero['created_at']));
-                        $hero_iso = date('c', strtotime($hero['created_at']));
+                        $hero_raw_date = !empty($hero['published_at']) ? $hero['published_at'] : $hero['created_at'];
+                        $hero_date_fmt = date('M d, Y', strtotime($hero_raw_date));
+                        $hero_iso = date('c', strtotime($hero_raw_date));
                         $hero_read = $database->getReadingTime($hero['content']);
-                        $hero_author = htmlspecialchars(!empty($hero['author_name']) ? $hero['author_name'] : 'Admin');
+                        $hero_author = htmlspecialchars((!empty($hero['author_name']) && strcasecmp($hero['author_name'], 'admin') !== 0) ? $hero['author_name'] : 'BreezeKings Editorial');
                         $hero_avatar = bk_avatar_url($hero['author_avatar'] ?? null, $hero_author);
                         $hero_cat = htmlspecialchars($hero['category'] ?? '');
                         $hero_title = htmlspecialchars($hero['title']);
@@ -487,8 +488,9 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                     <?php if ($has_posts):
                         while ($post = mysqli_fetch_assoc($latest_posts)):
                             $thumb = bk_thumb_url($post['featured_image']);
-                            $post_date = date('M d, Y', strtotime($post['created_at']));
-                            $post_iso = date('c', strtotime($post['created_at']));
+                            $post_raw_date = !empty($post['published_at']) ? $post['published_at'] : $post['created_at'];
+                            $post_date = date('M d, Y', strtotime($post_raw_date));
+                            $post_iso = date('c', strtotime($post_raw_date));
                             $read_time = $database->getReadingTime($post['content']);
                             $cat_name = htmlspecialchars($post['category'] ?? 'General');
                             $post_title = htmlspecialchars($post['title']);
@@ -496,7 +498,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 ? $post['excerpt']
                                 : substr(strip_tags($post['content']), 0, 150) . '…';
                             $excerpt = htmlspecialchars(bk_clean_text($raw_post_excerpt));
-                            $author_name = htmlspecialchars(!empty($post['author_name']) ? $post['author_name'] : 'Admin');
+                            $author_name = htmlspecialchars((!empty($post['author_name']) && strcasecmp($post['author_name'], 'admin') !== 0) ? $post['author_name'] : 'BreezeKings Editorial');
                             $author_avatar = bk_avatar_url($post['author_avatar'] ?? null, $author_name);
                             $post_url = bk_post_url($post);
                             $cat_url = bk_category_url($post['category_id'], $post['category'] ?? 'General');
@@ -712,7 +714,10 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                         </h4>
                                         <div class="flex items-center gap-2 mt-1.5">
                                             <time class="text-[9px] text-slate-400 font-bold uppercase tracking-wide">
-                                                <?php echo date('M d, Y', strtotime($t['created_at'])); ?>
+                                                <?php 
+                                                $t_raw_date = !empty($t['published_at']) ? $t['published_at'] : $t['created_at'];
+                                                echo date('M d, Y', strtotime($t_raw_date)); 
+                                                ?>
                                             </time>
                                             <span class="w-1 h-1 bg-slate-300 rounded-full" aria-hidden="true"></span>
                                             <span class="text-[9px] text-crimson-500 font-bold">

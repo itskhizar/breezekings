@@ -314,9 +314,15 @@ if (!$session->logged_in) {
                                         <label class="block text-xs font-semibold text-slate-500 mb-2">Post Status</label>
                                         <select name="status" id="postStatus" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue">
                                             <option value="Draft">Draft</option>
-                                            <option value="Published">Published</option>
+                                            <option value="Published" selected>Published</option>
                                         </select>
                                         <p id="statusNote" class="text-[10px] text-amber-600 mt-1 hidden italic">Note: Missing mandatory fields (*). Post will be saved as Draft.</p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 mb-2">Publish Date &amp; Time</label>
+                                        <input type="datetime-local" name="published_at" id="publishedAt" value="<?php echo date('Y-m-d\TH:i'); ?>" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue">
+                                        <p class="text-[10px] text-slate-400 mt-1">Sets publication date for RSS, sitemaps, and search engines.</p>
                                     </div>
 
                                     <div class="flex items-center justify-between py-2">

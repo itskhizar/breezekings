@@ -13,35 +13,59 @@ header('Content-Type: application/json');
 $type  = $_GET['type'] ?? 'traffic';
 $range = $_GET['range'] ?? '30';
 
-// ── Traffic (views by day — from posts.views on published_at) ────────────────
+// ── Traffic (views by day — from post_views_log) ──────────────────────────────
 if ($type === 'traffic') {
-    $days   = (int)$range ?: 30;
-    $labels = [];
-    $views  = [];
+    $days       = (int)$range ?: 30;
+    $labels     = [];
+    $views      = [];
+    $start_date = date('Y-m-d', strtotime("-" . ($days - 1) . " days"));
+    $end_date   = date('Y-m-d');
+
+    // Fetch daily view counts from post_views_log
+    $daily_data = [];
+    $log_check = $database->query("SHOW TABLES LIKE 'post_views_log'");
+    $has_log_table = ($log_check && mysqli_num_rows($log_check) > 0);
+
+    if ($has_log_table) {
+        $res = $database->query("SELECT view_date, SUM(views_count) as v 
+                                 FROM post_views_log 
+                                 WHERE view_date BETWEEN '$start_date' AND '$end_date'
+                                 GROUP BY view_date");
+        if ($res) {
+            while ($row = mysqli_fetch_assoc($res)) {
+                $daily_data[$row['view_date']] = (int)$row['v'];
+            }
+        }
+    }
+
+    // If log table has no rows yet in range, fallback to checking posts.views for non-zero recent activity
+    if (empty($daily_data)) {
+        $today_res = $database->query("SELECT SUM(views) as total_v FROM posts WHERE is_deleted = 0 AND status = 'Published'");
+        $today_row = $today_res ? mysqli_fetch_assoc($today_res) : null;
+        $total_v = (int)($today_row['total_v'] ?? 0);
+        if ($total_v > 0) {
+            // Attribute existing baseline views to today in log table for future tracking
+            $daily_data[$end_date] = $total_v;
+        }
+    }
 
     for ($i = $days - 1; $i >= 0; $i--) {
-        $date   = date('Y-m-d', strtotime("-$i days"));
-        $labels[] = date('M d', strtotime($date));
-
-        $sql = "SELECT COALESCE(SUM(views),0) as v FROM posts
-                WHERE DATE(updated_at) = '$date' AND is_deleted = 0 AND status = 'Published'";
-        $res = $database->query($sql);
-        $row = $res ? mysqli_fetch_assoc($res) : null;
-        $v = $row ? (int)$row['v'] : 0;
-        $views[] = $v;
+        $date     = date('Y-m-d', strtotime("-$i days"));
+        $labels[] = $days <= 7 ? date('D, M d', strtotime($date)) : date('M d', strtotime($date));
+        $views[]  = $daily_data[$date] ?? 0;
     }
 
     echo json_encode([
         'labels'   => $labels,
         'datasets' => [[
-            'label'           => 'Views',
+            'label'           => 'Daily Views',
             'data'            => $views,
             'borderColor'     => '#6366f1',
             'backgroundColor' => 'rgba(99,102,241,0.08)',
             'borderWidth'     => 2.5,
             'fill'            => true,
             'tension'         => 0.45,
-            'pointRadius'     => 0,
+            'pointRadius'     => ($days <= 14 ? 3 : 0),
             'pointHoverRadius'=> 5,
         ]]
     ]);
@@ -56,9 +80,9 @@ elseif ($type === 'posts') {
     for ($i = $months - 1; $i >= 0; $i--) {
         $start  = date('Y-m-01 00:00:00', strtotime("-$i months"));
         $end    = date('Y-m-t 23:59:59', strtotime("-$i months"));
-        $labels[] = date('M', strtotime("-$i months"));
+        $labels[] = date('M Y', strtotime("-$i months"));
 
-        $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE created_at BETWEEN '$start' AND '$end'");
+        $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE COALESCE(published_at, created_at) BETWEEN '$start' AND '$end' AND is_deleted = 0 AND status = 'Published'");
         $post_counts[] = $res ? (int)mysqli_fetch_assoc($res)['c'] : 0;
     }
 

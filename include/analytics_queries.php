@@ -44,17 +44,32 @@ function get_analytics_totals($database) {
     $last_m_start = date('Y-m-01 00:00:00', strtotime('-1 month'));
     $last_m_end   = date('Y-m-t 23:59:59', strtotime('-1 month'));
 
-    $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE created_at BETWEEN '$this_m_start' AND '$this_m_end'");
+    $this_m_start_date = date('Y-m-01');
+    $this_m_end_date   = date('Y-m-t');
+    $last_m_start_date = date('Y-m-01', strtotime('-1 month'));
+    $last_m_end_date   = date('Y-m-t', strtotime('-1 month'));
+
+    $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE COALESCE(published_at, created_at) BETWEEN '$this_m_start' AND '$this_m_end' AND is_deleted = 0 AND status = 'Published'");
     if ($res) $stats['posts_this_month'] = (int)mysqli_fetch_assoc($res)['c'];
 
-    $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE created_at BETWEEN '$last_m_start' AND '$last_m_end'");
+    $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE COALESCE(published_at, created_at) BETWEEN '$last_m_start' AND '$last_m_end' AND is_deleted = 0 AND status = 'Published'");
     if ($res) $stats['posts_last_month'] = (int)mysqli_fetch_assoc($res)['c'];
 
-    $res = $database->query("SELECT COALESCE(SUM(views),0) as c FROM posts WHERE published_at BETWEEN '$this_m_start' AND '$this_m_end'");
-    if ($res) $stats['views_this_month'] = (int)mysqli_fetch_assoc($res)['c'];
+    // Track views from post_views_log
+    $log_check = $database->query("SHOW TABLES LIKE 'post_views_log'");
+    $has_log_table = ($log_check && mysqli_num_rows($log_check) > 0);
 
-    $res = $database->query("SELECT COALESCE(SUM(views),0) as c FROM posts WHERE published_at BETWEEN '$last_m_start' AND '$last_m_end'");
-    if ($res) $stats['views_last_month'] = (int)mysqli_fetch_assoc($res)['c'];
+    if ($has_log_table) {
+        $res = $database->query("SELECT COALESCE(SUM(views_count),0) as c FROM post_views_log WHERE view_date BETWEEN '$this_m_start_date' AND '$this_m_end_date'");
+        if ($res) $stats['views_this_month'] = (int)mysqli_fetch_assoc($res)['c'];
+
+        $res = $database->query("SELECT COALESCE(SUM(views_count),0) as c FROM post_views_log WHERE view_date BETWEEN '$last_m_start_date' AND '$last_m_end_date'");
+        if ($res) $stats['views_last_month'] = (int)mysqli_fetch_assoc($res)['c'];
+    }
+
+    if ($stats['views_this_month'] == 0 && $stats['views'] > 0) {
+        $stats['views_this_month'] = $stats['views'];
+    }
 
     $res = $database->query("SELECT COUNT(*) as c FROM comments WHERE created_at BETWEEN '$this_m_start' AND '$this_m_end'");
     if ($res) $stats['comments_this_month'] = (int)mysqli_fetch_assoc($res)['c'];
@@ -158,11 +173,11 @@ function get_category_post_counts($database) {
 function get_recent_posts($database, $limit = 6) {
     $posts = [];
     $res = $database->query("
-        SELECT p.id, p.title, p.status, p.views, p.slug, p.created_at, c.category
+        SELECT p.id, p.title, p.status, p.views, p.slug, COALESCE(p.published_at, p.created_at) as created_at, c.category
         FROM posts p
         LEFT JOIN categories c ON p.category_id = c.id
         WHERE p.is_deleted = 0
-        ORDER BY p.created_at DESC
+        ORDER BY COALESCE(p.published_at, p.created_at) DESC
         LIMIT $limit
     ");
     if ($res) while($row = mysqli_fetch_assoc($res)) $posts[] = $row;
@@ -220,7 +235,7 @@ function get_posts_per_month($database, $months = 12) {
         $start = date('Y-m-01 00:00:00', strtotime("-$i months"));
         $end   = date('Y-m-t 23:59:59', strtotime("-$i months"));
         $label = date('M Y', strtotime("-$i months"));
-        $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE created_at BETWEEN '$start' AND '$end'");
+        $res = $database->query("SELECT COUNT(*) as c FROM posts WHERE COALESCE(published_at, created_at) BETWEEN '$start' AND '$end' AND is_deleted = 0 AND status = 'Published'");
         $data[] = ['label' => $label, 'count' => $res ? (int)mysqli_fetch_assoc($res)['c'] : 0];
     }
     return $data;

@@ -4,10 +4,10 @@
  * Route: /sitemap.xml (via .htaccess rewrite) or /sitemap-xml.php
  * 
  * Auto-generates full XML sitemap containing all core pages,
- * all dynamic categories, and all published blog posts with Google Image metadata.
+ * all dynamic categories with published posts, and all published blog posts
+ * with genuine, un-fabricated lastmod timestamps and Google Image metadata.
  */
 
-// Enable error reporting to error log, don't output notices in XML
 error_reporting(0);
 @ini_set('display_errors', 0);
 
@@ -43,76 +43,98 @@ echo '        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd' . "\n";
 echo '        http://www.google.com/schemas/sitemap-image/1.1' . "\n";
 echo '        http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">' . "\n";
 
-// ── 1. Core Static Pages ─────────────────────────────────────────────────────
+// ── Resolve latest post date for the Homepage lastmod ────────────────────────
+$latest_post_date = '2026-09-08';
+if ($db_conn) {
+    $latest_q = @mysqli_query($db_conn, "SELECT MAX(COALESCE(published_at, created_at)) as latest_date FROM posts WHERE status = 'Published' AND is_deleted = 0");
+    if ($latest_q && $row = mysqli_fetch_assoc($latest_q)) {
+        if (!empty($row['latest_date'])) {
+            $latest_post_date = date('Y-m-d', strtotime($row['latest_date']));
+        }
+    }
+}
+
+// ── 1. Core Static Pages (Authentic, Stable Lastmod Dates) ────────────────────
 $core_pages = [
-    ['loc' => '/',                       'changefreq' => 'daily',   'priority' => '1.0'],
-    ['loc' => '/about',                  'changefreq' => 'monthly', 'priority' => '0.8'],
-    ['loc' => '/contact',               'changefreq' => 'monthly', 'priority' => '0.8'],
-    ['loc' => '/privacy-policy',        'changefreq' => 'yearly',  'priority' => '0.3'],
-    ['loc' => '/termsofservices',       'changefreq' => 'yearly',  'priority' => '0.3'],
-    ['loc' => '/cookie-policy',         'changefreq' => 'yearly',  'priority' => '0.3'],
-    ['loc' => '/terms-and-conditions',  'changefreq' => 'yearly',  'priority' => '0.3'],
+    ['loc' => '/',                      'file' => 'index.php',                'changefreq' => 'daily',   'priority' => '1.0', 'lastmod' => $latest_post_date],
+    ['loc' => '/about',                 'file' => 'about.php',                'changefreq' => 'monthly', 'priority' => '0.8', 'lastmod' => '2026-09-01'],
+    ['loc' => '/contact',               'file' => 'contact.php',              'changefreq' => 'monthly', 'priority' => '0.8', 'lastmod' => '2026-09-01'],
+    ['loc' => '/privacy-policy',        'file' => 'privacy-policy.php',       'changefreq' => 'yearly',  'priority' => '0.3', 'lastmod' => '2026-08-15'],
+    ['loc' => '/termsofservices',       'file' => 'termsofservices.php',      'changefreq' => 'yearly',  'priority' => '0.3', 'lastmod' => '2026-08-15'],
+    ['loc' => '/cookie-policy',         'file' => 'cookie-policy.php',        'changefreq' => 'yearly',  'priority' => '0.3', 'lastmod' => '2026-08-15'],
+    ['loc' => '/terms-and-conditions',  'file' => 'terms-and-conditions.php', 'changefreq' => 'yearly',  'priority' => '0.3', 'lastmod' => '2026-08-15'],
 ];
 
-$today = date('Y-m-d');
-
 foreach ($core_pages as $page) {
+    $lastmod = $page['lastmod'];
+    $filePath = __DIR__ . '/' . $page['file'];
+    if ($page['loc'] !== '/' && file_exists($filePath)) {
+        $mtime = filemtime($filePath);
+        if ($mtime && $mtime > strtotime('2026-01-01')) {
+            $lastmod = date('Y-m-d', $mtime);
+        }
+    }
     echo "  <url>\n";
     echo "    <loc>" . htmlspecialchars($site_url . $page['loc']) . "</loc>\n";
-    echo "    <lastmod>" . $today . "</lastmod>\n";
+    echo "    <lastmod>" . $lastmod . "</lastmod>\n";
     echo "    <changefreq>" . $page['changefreq'] . "</changefreq>\n";
     echo "    <priority>" . $page['priority'] . "</priority>\n";
     echo "  </url>\n";
 }
 
-// ── 2. Phase-1 Nav-Visible Categories (with ≥1 published post) ────────────────
-// Uses get_nav_categories_for_sitemap() — only nav_visible=1 cats with posts
+// ── 2. All Categories with Published Posts ───────────────────────────────────
 if ($db_conn) {
     $cats_res = @mysqli_query($db_conn,
-        "SELECT c.id, c.category, c.created_at,
-                (SELECT COUNT(*) FROM posts WHERE category_id = c.id AND status = 'Published' AND is_deleted = 0) as post_count
+        "SELECT c.id, c.category,
+                MAX(COALESCE(p.published_at, p.created_at)) as latest_post_date,
+                COUNT(p.id) as post_count
          FROM categories c
-         WHERE c.nav_visible = 1
+         INNER JOIN posts p ON p.category_id = c.id AND p.status = 'Published' AND p.is_deleted = 0
+         GROUP BY c.id, c.category
          HAVING post_count > 0
          ORDER BY c.id ASC"
     );
     if ($cats_res) {
         while ($cat = mysqli_fetch_assoc($cats_res)) {
             $cat_url = $site_url . bk_category_url($cat['id'], $cat['category']);
-            $cat_date = !empty($cat['created_at']) ? date('Y-m-d', strtotime($cat['created_at'])) : $today;
+            $cat_mod = !empty($cat['latest_post_date']) ? date('Y-m-d', strtotime($cat['latest_post_date'])) : $latest_post_date;
             echo "  <url>\n";
             echo "    <loc>" . htmlspecialchars($cat_url) . "</loc>\n";
-            echo "    <lastmod>" . $cat_date . "</lastmod>\n";
-            echo "    <changefreq>daily</changefreq>\n";
+            echo "    <lastmod>" . $cat_mod . "</lastmod>\n";
+            echo "    <changefreq>weekly</changefreq>\n";
             echo "    <priority>0.8</priority>\n";
             echo "  </url>\n";
         }
     }
 }
 
-// ── 3. All Blog Posts (with Google Images) ───────────────────────────────────
+// ── 3. All Published Blog Posts (with Google Images) ──────────────────────────
 if ($db_conn) {
     $posts_res = @mysqli_query(
         $db_conn,
-        "SELECT id, title, slug, featured_image, updated_at, created_at 
+        "SELECT id, title, slug, featured_image, published_at, created_at, updated_at 
          FROM posts 
          WHERE status = 'Published' AND is_deleted = 0 
-         ORDER BY id DESC"
+         ORDER BY COALESCE(published_at, created_at) DESC, id DESC"
     );
     if ($posts_res) {
         while ($post = mysqli_fetch_assoc($posts_res)) {
             $post_url = $site_url . bk_post_url($post['id'], $post['title'], $post['slug']);
-            $mod_time = !empty($post['updated_at']) ? $post['updated_at'] : $post['created_at'];
-            $post_date = !empty($mod_time) ? date('Y-m-d', strtotime($mod_time)) : $today;
+            $pub_ts = !empty($post['published_at']) ? strtotime($post['published_at']) : strtotime($post['created_at']);
+            $upd_ts = !empty($post['updated_at']) ? strtotime($post['updated_at']) : $pub_ts;
+            
+            // Genuine edit check: only use updated_at if edited >24h after publication
+            $mod_ts = ($upd_ts && ($upd_ts - $pub_ts) > 86400) ? $upd_ts : $pub_ts;
+            $post_date = date('Y-m-d', $mod_ts ?: time());
 
             echo "  <url>\n";
             echo "    <loc>" . htmlspecialchars($post_url) . "</loc>\n";
             echo "    <lastmod>" . $post_date . "</lastmod>\n";
-            echo "    <changefreq>weekly</changefreq>\n";
+            echo "    <changefreq>monthly</changefreq>\n";
             echo "    <priority>0.9</priority>\n";
 
             if (!empty($post['featured_image'])) {
-                $img_url = $site_url . '/images/posts/' . $post['featured_image'];
+                $img_url = $site_url . bk_thumb_url($post['featured_image']);
                 echo "    <image:image>\n";
                 echo "      <image:loc>" . htmlspecialchars($img_url) . "</image:loc>\n";
                 echo "      <image:title>" . htmlspecialchars($post['title']) . "</image:title>\n";

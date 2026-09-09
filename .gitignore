@@ -7,4 +7,5 @@ config.local.php
 .env
 *.sql
 !sql/live_posts_13_14.sql
+!sql/fix_indexing_and_seo.sql
 

@@ -1,15 +1,15 @@
 # Breezekings — robots.txt
-# Generated for: https://breezekings.com
-# Last updated: 2026-09-06
-#
-# Purpose: Guide search engine crawlers to useful content
-# and block admin/internal pages from indexing.
-#
-# ── Allow all crawlers ────────────────────────────────────────────
+# Website: https://breezekings.com
+# Search Console: https://search.google.com/search-console
+
 User-agent: *
 Allow: /
+Allow: /assets/css/
+Allow: /assets/js/
+Allow: /assets/images/
+Allow: /images/
 
-# ── Block admin & dashboard pages ────────────────────────────────
+# ── Block admin & private dashboard pages ────────────────────────────────
 Disallow: /dashboard.php
 Disallow: /dashboardteacher.php
 Disallow: /login.php
@@ -41,19 +41,14 @@ Disallow: /navbar.php
 Disallow: /foot.php
 Disallow: /410.php
 Disallow: /include/
-Disallow: /assets/
 Disallow: /scratch/
 Disallow: /concept/
 Disallow: /requirements/
 
-# ── Block query-string-only duplicates ────────────────────────────
-# (Let canonical tags handle the real de-dupe for search)
+# ── Block query-string-only duplicates ────────────────────────────────────
 Disallow: /*?logout=*
 
-# ── Crawl-delay for bandwidth consideration ───────────────────────
-Crawl-delay: 2
-
-# ── Sitemaps & Feeds ───────────────────────────────────────────────
+# ── Sitemaps & Feeds ───────────────────────────────────────────────────────
 Sitemap: https://breezekings.com/sitemap.xml
-Sitemap: https://breezekings.com/sitemap-posts.php
+Sitemap: https://breezekings.com/sitemap-posts.xml
 Sitemap: https://breezekings.com/rss.xml

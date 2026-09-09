@@ -242,7 +242,8 @@ class Session
          'meta_title' => $data['meta_title'],
          'meta_description' => $data['meta_description'],
          'tags' => $data['tags'],
-         'is_featured' => (!empty($data['is_featured']) && ($data['is_featured'] == '1' || $data['is_featured'] == 'on' || $data['is_featured'] === 1)) ? 1 : 0
+         'is_featured' => (!empty($data['is_featured']) && ($data['is_featured'] == '1' || $data['is_featured'] == 'on' || $data['is_featured'] === 1)) ? 1 : 0,
+         'published_at' => !empty($data['published_at']) ? trim($data['published_at']) : null
       ];
 
       return $database->addpost($post_data) ? 0 : 2;
@@ -273,7 +274,8 @@ class Session
          'meta_title' => $data['meta_title'],
          'meta_description' => $data['meta_description'],
          'tags' => $data['tags'],
-         'is_featured' => (!empty($data['is_featured']) && ($data['is_featured'] == '1' || $data['is_featured'] == 'on' || $data['is_featured'] === 1)) ? 1 : 0
+         'is_featured' => (!empty($data['is_featured']) && ($data['is_featured'] == '1' || $data['is_featured'] == 'on' || $data['is_featured'] === 1)) ? 1 : 0,
+         'published_at' => !empty($data['published_at']) ? trim($data['published_at']) : null
       ];
 
       $featured_image = "";

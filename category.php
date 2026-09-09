@@ -243,15 +243,17 @@ $cat_meta_desc  = htmlspecialchars(bk_category_meta_description($category_name))
                             </a>
                             <div class="p-6 flex-1 flex flex-col">
                                 <div class="flex items-center flex-wrap gap-2.5 mb-3">
-                                    <span class="bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm"><?php echo strtoupper(htmlspecialchars($category_name)); ?></span>
-                                    <span class="text-[11px] text-slate-500 font-medium"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></span>
+                                    <?php 
+                                    $cat_raw_date = !empty($post['published_at']) ? $post['published_at'] : $post['created_at']; 
+                                    ?>
+                                    <span class="text-[11px] text-slate-500 font-medium"><?php echo date('M d, Y', strtotime($cat_raw_date)); ?></span>
                                     <span class="text-[11px] text-slate-300">&bull;</span>
                                     <span class="text-[11px] text-slate-600 font-medium normal-case flex items-center gap-1.5">
                                         <?php 
-                                        $display_author = !empty($post['author_name']) ? $post['author_name'] : 'Admin';
+                                        $display_author = (!empty($post['author_name']) && strcasecmp($post['author_name'], 'admin') !== 0) ? $post['author_name'] : 'BreezeKings Editorial';
                                         $display_avatar = bk_avatar_url($post['author_avatar'] ?? null, $display_author);
                                         ?>
-                                        <img src="<?php echo $display_avatar; ?>" alt="<?php echo htmlspecialchars($display_author); ?>" class="w-4 h-4 rounded-full object-cover border border-slate-200" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' . urlencode($display_author) . '&background=0B1F3A&color=ffffff&bold=true&size=64';">
+                                        <img src="<?php echo $display_avatar; ?>" alt="<?php echo htmlspecialchars($display_author); ?>" class="w-4 h-4 rounded-full object-cover border border-slate-200" onerror="this.onerror=null; this.src='/images/avatar.png';">
                                         <span><?php echo htmlspecialchars($display_author); ?></span>
                                     </span>
                                 </div>

@@ -57,9 +57,12 @@ $search_q = isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '';
 $database->increment_views($post_id);
 
 $author_info = $database->getUserInfo($post['author']);
-$author_name = !empty($post['author_name']) ? $post['author_name'] : (!empty($author_info['display_name']) ? $author_info['display_name'] : (!empty($author_info['username']) ? $author_info['username'] : (!empty($post['author']) ? $post['author'] : 'Admin')));
-if (empty($author_name) || strcasecmp($author_name, 'admin') === 0) {
-    $author_name = 'Admin';
+// Prioritize post author's actual name, then user account display name, then fallback to editorial team
+$raw_author = $post['author_name'] ?? $author_info['display_name'] ?? $author_info['username'] ?? $post['author'] ?? '';
+if (!empty($raw_author) && strcasecmp($raw_author, 'admin') !== 0) {
+    $author_name = $raw_author;
+} else {
+    $author_name = 'BreezeKings Editorial';
 }
 $author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avatar'] ?? null, $author_name);
 ?>
@@ -84,8 +87,18 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avat
     $post_author   = htmlspecialchars($author_name);
     $category_name = htmlspecialchars($post['category'] ?? 'General');
     $category_url  = $site_url_s . bk_category_url($post['category_id'], $post['category']);
-    $pub_date_iso  = date('c', strtotime($post['created_at']));
-    $mod_date_iso  = !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : $pub_date_iso;
+
+    // Genuine dates: prioritize published_at, show updated only if modified >24h later
+    $pub_raw       = !empty($post['published_at']) ? $post['published_at'] : $post['created_at'];
+    $pub_ts        = strtotime($pub_raw);
+    $upd_ts        = !empty($post['updated_at']) ? strtotime($post['updated_at']) : $pub_ts;
+    $has_updated   = ($upd_ts && ($upd_ts - $pub_ts) > 86400);
+
+    $pub_date_iso  = date('c', $pub_ts);
+    $mod_date_iso  = $has_updated ? date('c', $upd_ts) : $pub_date_iso;
+    $pub_date_fmt  = date('F d, Y', $pub_ts);
+    $mod_date_fmt  = $has_updated ? date('F d, Y', $upd_ts) : '';
+
     $word_count    = str_word_count(strip_tags($post['content']));
     $reading_time  = max(1, ceil($word_count / 200));
     ?>
@@ -185,8 +198,16 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avat
                 "inLanguage": "en-US",
                 "keywords": <?php echo $schema_tags_json; ?>,
                 "author": {
-                    "@type": "Person",
+                    "@type": "<?php echo ($author_name === 'BreezeKings Editorial' ? 'Organization' : 'Person'); ?>",
                     "name": "<?php echo addslashes($post_author); ?>",
+                    <?php if ($author_name !== 'BreezeKings Editorial'): ?>
+                    "jobTitle": "<?php echo addslashes(!empty($author_info['job_title']) ? $author_info['job_title'] : 'Technology Contributor'); ?>",
+                    <?php endif; ?>
+                    "worksFor": {
+                        "@type": "Organization",
+                        "name": "Breezekings",
+                        "url": "<?php echo $site_url_s; ?>/"
+                    },
                     "url": "<?php echo $site_url_s; ?>/about"
                 },
                 "publisher": {
@@ -563,11 +584,11 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avat
                         <span class="text-white normal-case font-semibold"><?php echo htmlspecialchars($author_name); ?></span>
                     </div>
                     <span>&bull;</span>
-                    <span><?php echo date('F d, Y', strtotime($post['created_at'])); ?></span>
+                    <span>Published <?php echo $pub_date_fmt; ?><?php if ($has_updated): ?> <span class="text-slate-400 font-normal normal-case">(Updated <?php echo $mod_date_fmt; ?>)</span><?php endif; ?></span>
                     <span>&bull;</span>
                     <span><?php echo $database->getReadingTime($post['content']); ?> MIN READ</span>
                     <span>&bull;</span>
-                    <span><?php echo $post['views']; ?> VIEWS</span>
+                    <span><?php echo number_format($post['views']); ?> VIEWS</span>
                 </div>
             </div>
         </div>
@@ -614,7 +635,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avat
                             <?php if (!empty($author_info['bio'])): ?>
                                 <p class="text-xs text-slate-600 leading-relaxed mb-3.5"><?php echo nl2br(htmlspecialchars($author_info['bio'])); ?></p>
                             <?php else: ?>
-                                <p class="text-xs text-slate-500 leading-relaxed mb-3.5">Contributing writer and editor at Breezekings, specializing in technology, culture, and in-depth analytical reporting.</p>
+                                <p class="text-xs text-slate-500 leading-relaxed mb-3.5">Lead technology editor and research analyst at Breezekings, specializing in artificial intelligence, software tools, digital security, and consumer technology trends.</p>
                             <?php endif; ?>
                             <div class="flex gap-4">
                                 <a href="mailto:<?php echo htmlspecialchars(!empty($author_info['email']) ? $author_info['email'] : 'contact@breezekings.com'); ?>" class="text-[10px] font-bold text-crimson-600 hover:text-crimson-800 uppercase tracking-widest transition-colors flex items-center gap-1.5">

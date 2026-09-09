@@ -318,6 +318,15 @@ if ($session->userlevel < 1 && !$is_author) {
                                         <p id="statusNote" class="text-[10px] text-amber-600 mt-1 hidden italic">Note: Missing mandatory fields (*). Post will be saved as Draft.</p>
                                     </div>
 
+                                    <?php
+                                    $current_post_date = !empty($post['published_at']) ? date('Y-m-d\TH:i', strtotime($post['published_at'])) : (!empty($post['created_at']) ? date('Y-m-d\TH:i', strtotime($post['created_at'])) : date('Y-m-d\TH:i'));
+                                    ?>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 mb-2">Publish Date &amp; Time</label>
+                                        <input type="datetime-local" name="published_at" id="publishedAt" value="<?php echo $current_post_date; ?>" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue">
+                                        <p class="text-[10px] text-slate-400 mt-1">Controls the publication timestamp for SEO, feeds, and readers.</p>
+                                    </div>
+
                                     <div class="flex items-center justify-between py-2">
                                         <div>
                                             <label for="isFeatured" class="text-sm text-slate-700 font-medium cursor-pointer">Featured Post</label>

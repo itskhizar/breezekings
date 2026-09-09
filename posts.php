@@ -302,7 +302,8 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
                                         <?php 
-                                        $portal_author = $row['author_name'] ?? $row['author'] ?? 'Admin';
+                                        $raw_author = $row['author_name'] ?? $row['author'] ?? '';
+                                        $portal_author = (!empty($raw_author) && strtolower($raw_author) !== 'admin') ? $raw_author : 'BreezeKings Editorial';
                                         $portal_avatar = bk_avatar_url($row['author_avatar'] ?? null, $portal_author);
                                         ?>
                                         <div class="flex items-center gap-2">
@@ -328,8 +329,9 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                         </span>
                                     </td>
                                     <td class="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">
-                                        <p class="text-slate-700 font-semibold"><?php echo date('M d, Y', strtotime($row['created_at'])); ?></p>
-                                        <p class="text-[10px] text-slate-400"><?php echo date('h:i A', strtotime($row['created_at'])); ?></p>
+                                        <?php $display_ts = !empty($row['published_at']) ? strtotime($row['published_at']) : strtotime($row['created_at']); ?>
+                                        <p class="text-slate-700 font-semibold"><?php echo date('M d, Y', $display_ts); ?></p>
+                                        <p class="text-[10px] text-slate-400"><?php echo date('h:i A', $display_ts); ?></p>
                                     </td>
                                     <td class="px-5 py-4 text-right whitespace-nowrap">
                                         <div class="flex items-center justify-end gap-1.5">
