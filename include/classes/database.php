@@ -139,7 +139,15 @@ class MySQLDB
       // Ensure content column is MEDIUMTEXT so long articles and HTML are never truncated
       @mysqli_query($this->connection, "ALTER TABLE `posts` MODIFY COLUMN `content` MEDIUMTEXT NOT NULL");
 
-      // ── Category Architecture: add nav_visible column ────────────────
+      // ── Category Architecture: ensure timestamp & nav_visible columns ────────
+      $res_ts = mysqli_query($this->connection, "SHOW COLUMNS FROM `categories` LIKE 'timestamp'");
+      if ($res_ts && mysqli_num_rows($res_ts) > 0) {
+         @mysqli_query($this->connection, "ALTER TABLE `categories` MODIFY COLUMN `timestamp` VARCHAR(255) NULL DEFAULT NULL");
+      }
+      $res_ca = mysqli_query($this->connection, "SHOW COLUMNS FROM `categories` LIKE 'created_at'");
+      if ($res_ca && mysqli_num_rows($res_ca) == 0) {
+         @mysqli_query($this->connection, "ALTER TABLE `categories` ADD `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+      }
       $res_nv = mysqli_query($this->connection, "SHOW COLUMNS FROM `categories` LIKE 'nav_visible'");
       if ($res_nv && mysqli_num_rows($res_nv) == 0) {
          mysqli_query($this->connection, "ALTER TABLE `categories` ADD `nav_visible` TINYINT(1) NOT NULL DEFAULT 1");
@@ -152,7 +160,8 @@ class MySQLDB
          $default_cats = ['Technology', 'Business', 'Entertainment', 'Health', 'Lifestyle', 'News'];
          foreach ($default_cats as $dcat) {
             $dcat_esc = mysqli_real_escape_string($this->connection, $dcat);
-            mysqli_query($this->connection, "INSERT INTO `categories` (`category`, `nav_visible`) VALUES ('$dcat_esc', 1)");
+            $now_d = date('Y-m-d H:i:s');
+            mysqli_query($this->connection, "INSERT INTO `categories` (`category`, `timestamp`, `nav_visible`) VALUES ('$dcat_esc', '$now_d', 1)");
          }
       }
 
@@ -171,11 +180,12 @@ class MySQLDB
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
       mysqli_query($this->connection, $q);
 
-      // Migration: clean up legacy names and set professional author display_name for admin
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `username` = 'admin' AND (`display_name` = 'Admin' OR `display_name` = 'admin' OR `display_name` IS NULL OR `display_name` = '')");
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `username` = 'khizar.ahmad' AND (`display_name` = 'khizar.ahmad' OR `display_name` IS NULL OR `display_name` = '')");
+      // Migration: Ensure admin user is NOT hardcoded to 'Khizar Ahmad'
+      // Keep real author 'Khizar Ahmad' on username 'khizar.ahmad'
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Admin' WHERE `username` = 'admin' AND `display_name` = 'Khizar Ahmad'");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Khizar Ahmad' WHERE `username` = 'khizar.ahmad' AND (`display_name` = 'khizar.ahmad' OR `display_name` IS NULL OR `display_name` = '' OR `display_name` = 'Khizar')");
       mysqli_query($this->connection, "UPDATE `users` SET `display_name` = 'Waseem Azam' WHERE `username` = 'azam.waseem' AND (`display_name` = 'azam.waseem' OR `display_name` IS NULL OR `display_name` = '')");
-      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = CONCAT(UPPER(SUBSTRING(REPLACE(username, '.', ' '), 1, 1)), SUBSTRING(REPLACE(username, '.', ' '), 2)) WHERE (`display_name` IS NULL OR `display_name` = '')");
+      mysqli_query($this->connection, "UPDATE `users` SET `display_name` = CONCAT(UPPER(SUBSTRING(REPLACE(username, '.', ' '), 1, 1)), SUBSTRING(REPLACE(username, '.', ' '), 2)) WHERE (`display_name` IS NULL OR `display_name` = '') AND LOWER(username) != 'admin'");
    }
 
    function generateExcerpt($content, $length = 160)
@@ -193,7 +203,7 @@ class MySQLDB
    function getReadingTime($content)
    {
       $words = str_word_count(strip_tags($content));
-      $reading_time = ceil($words / 200);
+      $reading_time = max(1, (int)ceil($words / 200));
       return $reading_time;
    }
 
@@ -237,7 +247,8 @@ class MySQLDB
       $meta_description = !empty($data['meta_description']) ? $data['meta_description'] : $excerpt;
       $excerpt = mysqli_real_escape_string($this->connection, $excerpt);
       $category_id = (int) $data['category_id'];
-      $author = mysqli_real_escape_string($this->connection, $data['author']);
+      $author = !empty($data['author']) ? mysqli_real_escape_string($this->connection, trim($data['author'])) : 'Admin';
+      $author_id_val = (!empty($data['author_id']) && (int)$data['author_id'] > 0) ? (int)$data['author_id'] : "NULL";
       $status = mysqli_real_escape_string($this->connection, $data['status']);
       $featured_image = mysqli_real_escape_string($this->connection, $data['featured_image']);
       $meta_title = mysqli_real_escape_string($this->connection, $meta_title);
@@ -262,8 +273,8 @@ class MySQLDB
          $published_at_val = "NOW()";
       }
 
-      $q = "INSERT INTO `posts` (`title`, `slug`, `content`, `excerpt`, `category_id`, `author`, `status`, `featured_image`, `meta_title`, `meta_description`, `tags`, `is_featured`, `published_at`, `created_at`) 
-            VALUES ('$title', '$slug', '$content', '$excerpt', '$category_id', '$author', '$status', '$featured_image', '$meta_title', '$meta_description', '$tags', '$is_featured', $published_at_val, $created_at_val)";
+      $q = "INSERT INTO `posts` (`title`, `slug`, `content`, `excerpt`, `category_id`, `author`, `author_id`, `status`, `featured_image`, `meta_title`, `meta_description`, `tags`, `is_featured`, `published_at`, `created_at`) 
+            VALUES ('$title', '$slug', '$content', '$excerpt', '$category_id', '$author', $author_id_val, '$status', '$featured_image', '$meta_title', '$meta_description', '$tags', '$is_featured', $published_at_val, $created_at_val)";
 
       return mysqli_query($this->connection, $q);
    }
@@ -299,6 +310,16 @@ class MySQLDB
          $img_sql = ", `featured_image` = '$featured_image'";
       }
 
+      $author_sql = "";
+      if (isset($data['author']) && trim($data['author']) !== '') {
+         $author_esc = mysqli_real_escape_string($this->connection, trim($data['author']));
+         $author_sql = ", `author` = '$author_esc'";
+         if (isset($data['author_id'])) {
+            $author_id_int = (int)$data['author_id'];
+            $author_sql .= ($author_id_int > 0) ? ", `author_id` = $author_id_int" : ", `author_id` = NULL";
+         }
+      }
+
       // Support custom publication date and keep created_at in sync
       $pub_sql = "";
       if (!empty($data['published_at'])) {
@@ -322,6 +343,7 @@ class MySQLDB
             `meta_description` = '$meta_description', 
             `tags` = '$tags', 
             `is_featured` = '$is_featured'
+            $author_sql
             $img_sql
             $pub_sql
             WHERE `id` = $id";
@@ -335,14 +357,14 @@ class MySQLDB
       $q = "SELECT p.*, c.category, 
                    CASE 
                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
-                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         ELSE 'Admin'
                     END as author_name,
-                   u.profile_image as author_avatar
+                   COALESCE(u.profile_image, 'default_avatar.png') as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
+            LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name) 
             WHERE p.id = $id AND p.is_deleted = 0";
       $res = mysqli_query($this->connection, $q);
       if ($res && mysqli_num_rows($res) > 0) {
@@ -356,14 +378,14 @@ class MySQLDB
       $q = "SELECT p.*, c.category, 
                    CASE 
                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
-                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         ELSE 'Admin'
                     END as author_name,
-                   u.profile_image as author_avatar
+                   COALESCE(u.profile_image, 'default_avatar.png') as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
+            LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name)
             WHERE p.is_deleted = 0";
 
       if (!empty($status)) {
@@ -386,14 +408,14 @@ class MySQLDB
       $q = "SELECT p.*, c.category, 
                    CASE 
                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
-                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         ELSE 'Admin'
                     END as author_name,
-                   u.profile_image as author_avatar
+                   COALESCE(u.profile_image, 'default_avatar.png') as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
+            LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name)
             WHERE p.category_id = $cat_id AND p.is_deleted = 0 $status_sql
             ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC";
       return mysqli_query($this->connection, $q);
@@ -410,14 +432,14 @@ class MySQLDB
       $q = "SELECT p.*, c.category, 
                    CASE 
                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
-                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         ELSE 'Admin'
                     END as author_name,
-                   u.profile_image as author_avatar
+                   COALESCE(u.profile_image, 'default_avatar.png') as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
+            LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name)
             WHERE (p.title LIKE '%$query%' OR p.content LIKE '%$query%' OR p.tags LIKE '%$query%' OR p.slug LIKE '%$query%') 
             $status_sql AND p.is_deleted = 0
             ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC";
@@ -430,14 +452,14 @@ class MySQLDB
       $q = "SELECT p.*, c.category, 
                    CASE 
                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
-                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         ELSE 'Admin'
                     END as author_name,
-                   u.profile_image as author_avatar
+                   COALESCE(u.profile_image, 'default_avatar.png') as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
+            LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name) 
             WHERE p.status = 'Published' AND p.is_deleted = 0
             ORDER BY p.views DESC, COALESCE(p.published_at, p.created_at) DESC LIMIT $limit";
       return mysqli_query($this->connection, $q);
@@ -451,14 +473,14 @@ class MySQLDB
       $q = "SELECT p.*, c.category, 
                    CASE 
                         WHEN u.display_name IS NOT NULL AND TRIM(u.display_name) != '' THEN TRIM(u.display_name)
-                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         WHEN p.author IS NOT NULL AND TRIM(p.author) != '' THEN TRIM(p.author)
+                        WHEN u.username IS NOT NULL AND TRIM(u.username) != '' THEN TRIM(u.username)
                         ELSE 'Admin'
                     END as author_name,
-                   u.profile_image as author_avatar
+                   COALESCE(u.profile_image, 'default_avatar.png') as author_avatar
             FROM posts p 
             LEFT JOIN categories c ON p.category_id = c.id 
-            LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) 
+            LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name) 
             WHERE p.category_id = $category_id AND p.id != $exclude_id 
             AND p.status = 'Published' AND p.is_deleted = 0
             ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC LIMIT $limit";
@@ -488,7 +510,27 @@ class MySQLDB
    function addcategory($category)
    {
       $category = mysqli_real_escape_string($this->connection, trim($category));
-      $q = "INSERT INTO `categories` (`category`, `nav_visible`) VALUES ('$category', 1)";
+      if ($category === '') return false;
+
+      // Check if already exists (case-insensitive)
+      $check = mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$category') LIMIT 1");
+      if ($check && mysqli_num_rows($check) > 0) {
+         return 'duplicate'; // distinct return value so UI can show proper message
+      }
+
+      $now = date('Y-m-d H:i:s');
+      $q = "INSERT INTO `categories` (`category`, `timestamp`, `nav_visible`) VALUES ('$category', '$now', 1)";
+      return mysqli_query($this->connection, $q);
+   }
+
+   /**
+    * Get all registered active authors / users for post author selection
+    */
+   function get_all_authors()
+   {
+      $q = "SELECT id, username, display_name, registration_no, email, profile_image 
+            FROM users 
+            ORDER BY CASE WHEN userlevel >= 4 THEN 0 ELSE 1 END, display_name ASC";
       return mysqli_query($this->connection, $q);
    }
 
@@ -568,10 +610,21 @@ class MySQLDB
       return mysqli_fetch_array($result);
    }
 
+   function getUserInfoById($id)
+   {
+      $id = (int)$id;
+      if ($id <= 0) return NULL;
+      $q = "SELECT * FROM users WHERE id = $id LIMIT 1";
+      $result = mysqli_query($this->connection, $q);
+      if (!$result || (mysqli_num_rows($result) < 1))
+         return NULL;
+      return mysqli_fetch_array($result);
+   }
+
    function getUserInfo($identifier)
    {
       $identifier = mysqli_real_escape_string($this->connection, $identifier);
-      $q = "SELECT * FROM users WHERE username = '$identifier' OR registration_no = '$identifier' LIMIT 1";
+      $q = "SELECT * FROM users WHERE username = '$identifier' OR registration_no = '$identifier' OR display_name = '$identifier' LIMIT 1";
       $result = mysqli_query($this->connection, $q);
       if (!$result || (mysqli_num_rows($result) < 1))
          return NULL;

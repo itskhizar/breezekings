@@ -303,7 +303,7 @@ $total_results = $result ? mysqli_num_rows($result) : 0;
                                     <td class="px-5 py-4 whitespace-nowrap">
                                         <?php 
                                         $raw_author = $row['author_name'] ?? $row['author'] ?? '';
-                                        $portal_author = (!empty($raw_author) && strtolower($raw_author) !== 'admin') ? $raw_author : 'BreezeKings Editorial';
+                                        $portal_author = !empty($raw_author) ? $raw_author : 'Admin';
                                         $portal_avatar = bk_avatar_url($row['author_avatar'] ?? null, $portal_author);
                                         ?>
                                         <div class="flex items-center gap-2">

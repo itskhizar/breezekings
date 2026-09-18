@@ -13,7 +13,19 @@ if (!empty($_GET['id']) && is_numeric($_GET['id'])) {
 
 $post = null;
 if ($post_id > 0) {
-    $post_query = $database->query("SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) WHERE p.id = $post_id");
+    // Join users by author_id first (most reliable), then fall back to username/registration_no match
+    $post_query = $database->query("SELECT p.*, c.category,
+        COALESCE(
+            NULLIF(u1.display_name, ''), u1.username,
+            NULLIF(u2.display_name, ''), u2.username,
+            p.author
+        ) as author_name,
+        COALESCE(u1.profile_image, u2.profile_image) as author_avatar
+        FROM posts p
+        LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN users u1 ON (p.author_id > 0 AND p.author_id = u1.id)
+        LEFT JOIN users u2 ON (p.author_id IS NULL OR p.author_id = 0) AND (p.author = u2.registration_no OR p.author = u2.username)
+        WHERE p.id = $post_id");
     if ($post_query && mysqli_num_rows($post_query) > 0) {
         $post = mysqli_fetch_assoc($post_query);
     }
@@ -24,7 +36,18 @@ if (!$post) {
     $slug_candidate = !empty($_GET['slug']) ? trim($_GET['slug']) : (!empty($_GET['id']) ? trim($_GET['id']) : '');
     if (!empty($slug_candidate)) {
         $slug_clean = mysqli_real_escape_string($database->connection, $slug_candidate);
-        $post_query = $database->query("SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name FROM posts p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username) WHERE p.slug = '$slug_clean' LIMIT 1");
+        $post_query = $database->query("SELECT p.*, c.category,
+            COALESCE(
+                NULLIF(u1.display_name, ''), u1.username,
+                NULLIF(u2.display_name, ''), u2.username,
+                p.author
+            ) as author_name,
+            COALESCE(u1.profile_image, u2.profile_image) as author_avatar
+            FROM posts p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN users u1 ON (p.author_id > 0 AND p.author_id = u1.id)
+            LEFT JOIN users u2 ON (p.author_id IS NULL OR p.author_id = 0) AND (p.author = u2.registration_no OR p.author = u2.username)
+            WHERE p.slug = '$slug_clean' LIMIT 1");
         if ($post_query && mysqli_num_rows($post_query) > 0) {
             $post = mysqli_fetch_assoc($post_query);
             $post_id = (int)$post['id'];
@@ -56,15 +79,22 @@ $search_q = isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '';
 // Increment views
 $database->increment_views($post_id);
 
-$author_info = $database->getUserInfo($post['author']);
-// Prioritize post author's actual name, then user account display name, then fallback to editorial team
-$raw_author = $post['author_name'] ?? $author_info['display_name'] ?? $author_info['username'] ?? $post['author'] ?? '';
-if (!empty($raw_author) && strcasecmp($raw_author, 'admin') !== 0) {
+$author_info = null;
+if (!empty($post['author_id']) && (int)$post['author_id'] > 0) {
+    $author_info = $database->getUserInfoById($post['author_id']);
+}
+if (!$author_info && !empty($post['author'])) {
+    $author_info = $database->getUserInfo($post['author']);
+}
+// Priority: user display_name, author_name from DB JOIN, username, stored author
+$raw_author = $author_info['display_name'] ?? $post['author_name'] ?? $post['author'] ?? $author_info['username'] ?? '';
+// Only fall back to editorial team if we genuinely have no name at all
+if (!empty($raw_author)) {
     $author_name = $raw_author;
 } else {
     $author_name = 'BreezeKings Editorial';
 }
-$author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avatar'] ?? null, $author_name);
+$author_img = bk_avatar_url($post['author_avatar'] ?? $author_info['profile_image'] ?? null, $author_name);
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -651,7 +681,7 @@ $author_img  = bk_avatar_url($author_info['profile_image'] ?? $post['author_avat
                     <!-- Related Articles in Category -->
                     <?php
                     $cat_id_num = (int)$post['category_id'];
-                    $related_query = $database->get_related_posts($cat_id_num, $cur_post_id, 3);
+                    $related_query = $database->get_related_posts($cat_id_num, $post_id, 3);
                     if ($related_query && mysqli_num_rows($related_query) > 0) {
                     ?>
                     <section class="mt-14 pt-12 border-t border-slate-200">

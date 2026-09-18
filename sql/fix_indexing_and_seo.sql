@@ -81,16 +81,26 @@ UPDATE posts SET published_at = '2026-09-07 10:30:00', created_at = '2026-09-07 
 -- Any other posts without published_at fall back to created_at
 UPDATE posts SET published_at = created_at WHERE published_at IS NULL;
 
--- 5. Set authoritative author profile for the admin account (E-E-A-T)
--- IMPORTANT: Only updates the admin user (username = 'admin' or 'khizar.ahmad')
--- Other author accounts keep their own names - never overwrite real contributors!
+-- 5. Set correct display_name for NAMED contributor accounts only
+-- IMPORTANT: Do NOT change the 'admin' account display_name here.
+--            Admin posts show "BreezeKings Editorial" via PHP template fallback.
+--            Only update accounts with a real person's username.
 UPDATE users 
-SET 
-  display_name = 'Khizar Ahmad',
-  bio = 'Technology Strategist, Full-Stack Software Engineer & Founder at BreezeKings. Specializing in Web Development, Cloud Architecture, AI systems, and Software Engineering best practices.'
-WHERE 
-  (LOWER(username) = 'admin' OR LOWER(username) = 'khizar.ahmad' OR LOWER(username) = 'khizar')
-  AND (display_name IS NULL OR display_name = '' OR LOWER(display_name) = 'admin');
+SET display_name = 'Khizar Ahmad',
+    bio = 'Technology Strategist, Full-Stack Software Engineer & Founder at BreezeKings.'
+WHERE LOWER(username) = 'khizar.ahmad'
+  AND (display_name IS NULL OR display_name = '' OR display_name = 'khizar.ahmad');
+
+UPDATE users 
+SET display_name = 'Waseem Azam'
+WHERE LOWER(username) = 'azam.waseem'
+  AND (display_name IS NULL OR display_name = '' OR display_name = 'azam.waseem');
+
+-- Fix any other users whose display_name is still their raw username (not admin)
+UPDATE users
+SET display_name = CONCAT(UPPER(SUBSTRING(REPLACE(username, '.', ' '), 1, 1)), SUBSTRING(REPLACE(username, '.', ' '), 2))
+WHERE (display_name IS NULL OR display_name = '')
+  AND LOWER(username) != 'admin';
 
 -- 6. Seed post_views_log with existing view counts distributed over recent days
 -- This gives the analytics dashboard immediate baseline traffic data

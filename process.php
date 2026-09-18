@@ -83,6 +83,8 @@ class Process
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
          header("Location: admin-categories.php?msg=error");
+      } else if ($retval == 3) {
+         header("Location: admin-categories.php?msg=duplicate");
       } else if ($retval == 2) {
          header("Location: admin-categories.php?msg=db_error");
       }

@@ -15,7 +15,12 @@ if (!$post) {
 }
 
 // Permission Check: Admin (userlevel >= 1) or Author can edit
-$is_author = ($post['author'] == ($session->userinfo['registration_no'] ?? '') || $post['author'] == $session->username);
+$current_uid = (int)($session->userinfo['id'] ?? 0);
+$post_author_id = (int)($post['author_id'] ?? 0);
+$is_author = ($post_author_id > 0 && $post_author_id === $current_uid)
+    || ($post['author'] === ($session->userinfo['registration_no'] ?? ''))
+    || ($post['author'] === ($session->userinfo['username'] ?? ''))
+    || (!empty($session->userinfo['display_name']) && $post['author'] === $session->userinfo['display_name']);
 if ($session->userlevel < 1 && !$is_author) {
     header("Location: posts.php?msg=error");
     exit();
@@ -343,6 +348,36 @@ if ($session->userlevel < 1 && !$is_author) {
                                             <i class="fa-solid fa-save"></i> Save Changes
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Author -->
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div class="p-4 border-b border-slate-100 flex items-center gap-2">
+                                    <i class="fa-regular fa-user text-slate-400"></i>
+                                    <h3 class="font-semibold text-slate-800 text-sm">Author</h3>
+                                </div>
+                                <div class="p-5">
+                                    <select name="author_id" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue">
+                                        <?php
+                                        $authors = $database->get_all_authors();
+                                        while ($au = mysqli_fetch_assoc($authors)) {
+                                            $au_name = !empty($au['display_name']) ? htmlspecialchars($au['display_name']) : htmlspecialchars($au['username']);
+                                            $selected = '';
+                                            if (!empty($post['author_id']) && (int)$post['author_id'] === (int)$au['id']) {
+                                                $selected = ' selected';
+                                            } elseif (empty($post['author_id'])) {
+                                                if ($au['username'] === $post['author'] || (!empty($au['display_name']) && $au['display_name'] === $post['author']) || (!empty($au['registration_no']) && $au['registration_no'] === $post['author'])) {
+                                                    $selected = ' selected';
+                                                } elseif ($au['id'] == ($session->userinfo['id'] ?? 0)) {
+                                                    $selected = ' selected';
+                                                }
+                                            }
+                                            echo "<option value=\"{$au['id']}\"{$selected}>{$au_name}</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                    <p class="text-[10px] text-slate-400 mt-2">Select the author of this post.</p>
                                 </div>
                             </div>
 

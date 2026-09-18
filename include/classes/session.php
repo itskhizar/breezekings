@@ -172,7 +172,9 @@ class Session
          $form->setError("category", "* Category is required");
          return 1;
       }
-      return $database->addcategory($category) ? 0 : 2;
+      $result = $database->addcategory($category);
+      if ($result === 'duplicate') return 3; // duplicate
+      return $result ? 0 : 2;
    }
 
    function edit_category($id, $category)
@@ -193,18 +195,35 @@ class Session
       if (empty($data['category_id'])) $form->setError("category_id", "* Category is required");
       if (empty($data['content'])) $form->setError("content", "* Content is required");
 
+      // ── Resolve author: support explicit author_id from form dropdown ────
+      // If an author_id is submitted from the create-post form (admin selecting
+      // a specific author), look up that user's info and use their display_name
+      // and numeric id as the real author. Otherwise fall back to session user.
+      $selected_author_id = !empty($data['author_id']) ? (int)$data['author_id'] : 0;
+      if ($selected_author_id > 0) {
+         $author_row = mysqli_fetch_assoc($database->query("SELECT id, username, display_name, registration_no FROM users WHERE id = $selected_author_id LIMIT 1"));
+      } else {
+         $author_row = null;
+      }
+
+      if ($author_row) {
+         // Use selected user's display_name as the stored author name
+         $author_name  = !empty($author_row['display_name']) ? $author_row['display_name'] : $author_row['username'];
+         $author_db_id = (int)$author_row['id'];
+      } else {
+         // Fall back to currently logged-in user
+         $author_name  = !empty($this->userinfo['display_name']) ? $this->userinfo['display_name'] : $this->username;
+         $author_db_id = !empty($this->userinfo['id']) ? (int)$this->userinfo['id'] : 0;
+      }
+
       // ── Server-side duplicate submission guard ────────────────────────────
-      // Prevent double-posts if the author clicks Save twice or the browser
-      // resends the form on refresh. Check if a post with the same title
-      // was already created in the last 60 seconds by the same author.
       if (!empty($data['title'])) {
-         $esc_title  = mysqli_real_escape_string($database->connection, trim($data['title']));
-         $author_id  = !empty($this->userinfo['registration_no']) ? mysqli_real_escape_string($database->connection, $this->userinfo['registration_no']) : mysqli_real_escape_string($database->connection, $this->username);
+         $esc_title = mysqli_real_escape_string($database->connection, trim($data['title']));
+         $esc_author = mysqli_real_escape_string($database->connection, $author_name);
          $recent_check = $database->query(
-            "SELECT id FROM `posts` WHERE `title` = '$esc_title' AND `author` = '$author_id' AND `created_at` >= NOW() - INTERVAL 60 SECOND LIMIT 1"
+            "SELECT id FROM `posts` WHERE `title` = '$esc_title' AND (`author` = '$esc_author' OR `author_id` = $author_db_id) AND `created_at` >= NOW() - INTERVAL 60 SECOND LIMIT 1"
          );
          if ($recent_check && mysqli_num_rows($recent_check) > 0) {
-            // Duplicate detected — redirect to the existing post instead of creating a new one
             $dup = mysqli_fetch_assoc($recent_check);
             header("Location: posts.php?msg=duplicate&dup_id=" . (int)$dup['id']);
             exit();
@@ -236,7 +255,8 @@ class Session
          'content' => $data['content'],
          'excerpt' => $data['excerpt'],
          'category_id' => $data['category_id'],
-         'author' => !empty($this->userinfo['registration_no']) ? $this->userinfo['registration_no'] : $this->username,
+         'author' => $author_name,
+         'author_id' => $author_db_id,
          'status' => $status,
          'featured_image' => $featured_image,
          'meta_title' => $data['meta_title'],
@@ -253,11 +273,16 @@ class Session
    {
       global $database, $form;
       $id = (int)$id;
-      $post = mysqli_fetch_assoc($database->query("SELECT author FROM posts WHERE id = $id"));
+      $post = mysqli_fetch_assoc($database->query("SELECT author, author_id FROM posts WHERE id = $id"));
       if (!$post) return 2;
       
       // Permission Check: Admin (userlevel >= 1) or Author can edit
-      $is_author = ($post['author'] == ($this->userinfo['registration_no'] ?? '') || $post['author'] == $this->username);
+      $current_uid = (int)($this->userinfo['id'] ?? 0);
+      $post_author_id = (int)($post['author_id'] ?? 0);
+      $is_author = ($post_author_id > 0 && $post_author_id === $current_uid)
+          || ($post['author'] === ($this->userinfo['registration_no'] ?? ''))
+          || ($post['author'] === ($this->userinfo['username'] ?? ''))
+          || (!empty($this->userinfo['display_name']) && $post['author'] === $this->userinfo['display_name']);
       if ($this->userlevel < 1 && !$is_author) {
          return 2;
       }
@@ -277,6 +302,16 @@ class Session
          'is_featured' => (!empty($data['is_featured']) && ($data['is_featured'] == '1' || $data['is_featured'] == 'on' || $data['is_featured'] === 1)) ? 1 : 0,
          'published_at' => !empty($data['published_at']) ? trim($data['published_at']) : null
       ];
+
+      // Handle author assignment if provided
+      if (!empty($data['author_id'])) {
+         $author_id_int = (int)$data['author_id'];
+         $u_row = $database->getUserInfoById($author_id_int);
+         if ($u_row) {
+            $post_data['author_id'] = (int)$u_row['id'];
+            $post_data['author'] = !empty($u_row['display_name']) ? trim($u_row['display_name']) : $u_row['username'];
+         }
+      }
 
       $featured_image = "";
       if ($thumbnail && $thumbnail['error'] === UPLOAD_ERR_OK) {
@@ -337,9 +372,14 @@ class Session
    function delete_post($id) { 
       global $database; 
       $id = (int)$id;
-      $post = mysqli_fetch_assoc($database->query("SELECT author FROM posts WHERE id = $id"));
+      $post = mysqli_fetch_assoc($database->query("SELECT author, author_id FROM posts WHERE id = $id"));
       if (!$post) return false;
-      $is_author = ($post['author'] == ($this->userinfo['registration_no'] ?? '') || $post['author'] == $this->username);
+      $current_uid = (int)($this->userinfo['id'] ?? 0);
+      $post_author_id = (int)($post['author_id'] ?? 0);
+      $is_author = ($post_author_id > 0 && $post_author_id === $current_uid)
+          || ($post['author'] === ($this->userinfo['registration_no'] ?? ''))
+          || ($post['author'] === ($this->userinfo['username'] ?? ''))
+          || (!empty($this->userinfo['display_name']) && $post['author'] === $this->userinfo['display_name']);
       if ($this->userlevel < 1 && !$is_author) return false;
       return $database->delete_post($id); 
    }

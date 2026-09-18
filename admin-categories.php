@@ -14,8 +14,14 @@ if ($session->userlevel < 1) {
 if (isset($_POST['addcategory'])) {
     $cat_name = trim($_POST['category'] ?? '');
     if (!empty($cat_name)) {
-        $database->addcategory($cat_name);
-        header("Location: admin-categories.php?msg=success");
+        $result = $database->addcategory($cat_name);
+        if ($result === 'duplicate') {
+            header("Location: admin-categories.php?msg=duplicate");
+        } elseif ($result) {
+            header("Location: admin-categories.php?msg=success");
+        } else {
+            header("Location: admin-categories.php?msg=db_error");
+        }
         exit();
     } else {
         header("Location: admin-categories.php?msg=error");
@@ -130,6 +136,16 @@ if (isset($_GET['del_cat'])) {
                                 <p class="text-sm text-emerald-700 font-medium">Operation completed successfully.</p>
                             </div>
                             <button onclick="document.getElementById('statusAlert').style.display='none'" class="text-emerald-400 hover:text-emerald-600 transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    <?php elseif ($_GET['msg'] == 'duplicate'): ?>
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-r flex items-center justify-between gap-3 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                                <p class="text-sm text-amber-700 font-medium">Category already exists. Please use a different name.</p>
+                            </div>
+                            <button onclick="document.getElementById('statusAlert').style.display='none'" class="text-amber-400 hover:text-amber-600 transition-colors">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>

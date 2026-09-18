@@ -250,7 +250,7 @@ $cat_meta_desc  = htmlspecialchars(bk_category_meta_description($category_name))
                                     <span class="text-[11px] text-slate-300">&bull;</span>
                                     <span class="text-[11px] text-slate-600 font-medium normal-case flex items-center gap-1.5">
                                         <?php 
-                                        $display_author = (!empty($post['author_name']) && strcasecmp($post['author_name'], 'admin') !== 0) ? $post['author_name'] : 'BreezeKings Editorial';
+                                        $display_author = !empty($post['author_name']) ? $post['author_name'] : 'BreezeKings Editorial';
                                         $display_avatar = bk_avatar_url($post['author_avatar'] ?? null, $display_author);
                                         ?>
                                         <img src="<?php echo $display_avatar; ?>" alt="<?php echo htmlspecialchars($display_author); ?>" class="w-4 h-4 rounded-full object-cover border border-slate-200" onerror="this.onerror=null; this.src='/images/avatar.png';">

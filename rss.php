@@ -55,7 +55,7 @@ if ($db_conn) {
         "SELECT p.*, c.category, COALESCE(NULLIF(u.display_name, ''), u.username, p.author) as author_name 
          FROM posts p 
          LEFT JOIN categories c ON p.category_id = c.id 
-         LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
+         LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name)
          WHERE p.status = 'Published' AND p.is_deleted = 0 
          ORDER BY p.created_at DESC 
          LIMIT 30"

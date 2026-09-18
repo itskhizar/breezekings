@@ -325,7 +325,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                      u.profile_image as author_avatar
                                      FROM posts p
                                      LEFT JOIN categories c ON p.category_id = c.id
-                                     LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
+                                     LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name)
                                      WHERE p.status = 'Published'
                                        AND p.is_deleted = 0
                                        AND p.is_featured = 1
@@ -344,7 +344,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                              u.profile_image as author_avatar
                              FROM posts p
                              LEFT JOIN categories c ON p.category_id = c.id
-                             LEFT JOIN users u ON (p.author = u.registration_no OR p.author = u.username)
+                             LEFT JOIN users u ON ((p.author_id IS NOT NULL AND p.author_id > 0 AND p.author_id = u.id) OR p.author = u.registration_no OR p.author = u.username OR p.author = u.display_name)
                              WHERE p.status = 'Published' AND p.is_deleted = 0
                              ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC LIMIT 1"
                         );
@@ -356,7 +356,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                         $hero_date_fmt = date('M d, Y', strtotime($hero_raw_date));
                         $hero_iso = date('c', strtotime($hero_raw_date));
                         $hero_read = $database->getReadingTime($hero['content']);
-                        $hero_author = htmlspecialchars((!empty($hero['author_name']) && strcasecmp($hero['author_name'], 'admin') !== 0) ? $hero['author_name'] : 'BreezeKings Editorial');
+                        $hero_author = htmlspecialchars(!empty($hero['author_name']) ? $hero['author_name'] : 'BreezeKings Editorial');
                         $hero_avatar = bk_avatar_url($hero['author_avatar'] ?? null, $hero_author);
                         $hero_cat = htmlspecialchars($hero['category'] ?? '');
                         $hero_title = htmlspecialchars($hero['title']);
@@ -498,7 +498,7 @@ $search_q  = isset($_GET['q']) ? trim(htmlspecialchars($_GET['q'])) : '';
                                 ? $post['excerpt']
                                 : substr(strip_tags($post['content']), 0, 150) . '…';
                             $excerpt = htmlspecialchars(bk_clean_text($raw_post_excerpt));
-                            $author_name = htmlspecialchars((!empty($post['author_name']) && strcasecmp($post['author_name'], 'admin') !== 0) ? $post['author_name'] : 'BreezeKings Editorial');
+                            $author_name = htmlspecialchars(!empty($post['author_name']) ? $post['author_name'] : 'BreezeKings Editorial');
                             $author_avatar = bk_avatar_url($post['author_avatar'] ?? null, $author_name);
                             $post_url = bk_post_url($post);
                             $cat_url = bk_category_url($post['category_id'], $post['category'] ?? 'General');

@@ -344,6 +344,27 @@ if (!$session->logged_in) {
                                 </div>
                             </div>
 
+                            <!-- Author -->
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div class="p-4 border-b border-slate-100 flex items-center gap-2">
+                                    <i class="fa-regular fa-user text-slate-400"></i>
+                                    <h3 class="font-semibold text-slate-800 text-sm">Author</h3>
+                                </div>
+                                <div class="p-5">
+                                    <select name="author_id" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue">
+                                        <?php
+                                        $authors = $database->get_all_authors();
+                                        while ($au = mysqli_fetch_assoc($authors)) {
+                                            $au_name = !empty($au['display_name']) ? htmlspecialchars($au['display_name']) : htmlspecialchars($au['username']);
+                                            $selected = ($au['id'] == ($session->userinfo['id'] ?? 0)) ? ' selected' : '';
+                                            echo "<option value=\"{$au['id']}\"{$selected}>{$au_name}</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                    <p class="text-[10px] text-slate-400 mt-2">Select the real author of this post. Defaults to your account.</p>
+                                </div>
+                            </div>
+
                             <!-- Featured Image -->
                             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                                 <div class="p-4 border-b border-slate-100 flex items-center gap-2">
