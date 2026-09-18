@@ -165,9 +165,6 @@ class MySQLDB
          }
       }
 
-      // Permanently clean up ghost categories (Games, Sports, Fashion) with 0 posts
-      mysqli_query($this->connection, "DELETE c FROM `categories` c LEFT JOIN `posts` p ON c.id = p.category_id WHERE LOWER(c.category) IN ('games', 'sports', 'fashion') AND p.id IS NULL");
-
       // ── Ensure post_views_log table exists for daily analytics tracking ──
       $q = "CREATE TABLE IF NOT EXISTS `post_views_log` (
          `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -509,18 +506,20 @@ class MySQLDB
 
    function addcategory($category)
    {
-      $category = mysqli_real_escape_string($this->connection, trim($category));
-      if ($category === '') return false;
+      $clean_category = trim($category);
+      if ($clean_category === '') return false;
+      $category_esc = mysqli_real_escape_string($this->connection, $clean_category);
 
       // Check if already exists (case-insensitive)
-      $check = mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$category') LIMIT 1");
+      $check = mysqli_query($this->connection, "SELECT id FROM `categories` WHERE LOWER(`category`) = LOWER('$category_esc') LIMIT 1");
       if ($check && mysqli_num_rows($check) > 0) {
          return 'duplicate'; // distinct return value so UI can show proper message
       }
 
       $now = date('Y-m-d H:i:s');
-      $q = "INSERT INTO `categories` (`category`, `timestamp`, `nav_visible`) VALUES ('$category', '$now', 1)";
-      return mysqli_query($this->connection, $q);
+      $q = "INSERT INTO `categories` (`category`, `timestamp`, `nav_visible`, `created_at`) VALUES ('$category_esc', '$now', 1, '$now')";
+      $res = mysqli_query($this->connection, $q);
+      return $res ? true : false;
    }
 
    /**
