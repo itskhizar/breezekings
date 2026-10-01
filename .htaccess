@@ -13,6 +13,9 @@ AddDefaultCharset UTF-8
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+    # Unset Alt-Svc to prevent browser UDP/QUIC protocol stalls (ERR_QUIC_PROTOCOL_ERROR)
+    Header unset Alt-Svc
+    Header always unset Alt-Svc
 </IfModule>
 
 # Prevent Directory Browsing

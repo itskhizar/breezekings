@@ -435,9 +435,9 @@ if ($session->userlevel < 1 && !$is_author) {
                                         <textarea name="meta_description" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-blue resize-none" placeholder="Search result snippet..."><?php echo htmlspecialchars($post['meta_description']); ?></textarea>
                                     </div>
                                      <div>
-                                          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tags (Press Enter or comma to add)</label>
-                                          <div id="tagContainer" class="flex flex-wrap gap-2 p-2 bg-slate-50 border border-slate-200 rounded min-h-[40px]">
-                                             <input type="text" id="tagInput" class="bg-transparent border-none outline-none text-sm text-slate-700 min-w-[100px] flex-1" placeholder="Add tags...">
+                                         <label for="tagInput" class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 cursor-pointer">Tags (Press Enter or comma to add)</label>
+                                         <div id="tagContainer" class="flex flex-wrap items-center gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded min-h-[42px] cursor-text focus-within:border-brand-blue focus-within:bg-white focus-within:ring-1 focus-within:ring-brand-blue transition-all">
+                                             <input type="text" id="tagInput" class="bg-transparent border-none outline-none text-sm text-slate-700 min-w-[120px] flex-1 py-0.5 px-1" placeholder="Add tags..." autocomplete="off">
                                          </div>
                                          <input type="hidden" name="tags" id="hiddenTags" value="<?php echo htmlspecialchars($post['tags']); ?>">
                                      </div>
@@ -715,42 +715,64 @@ if ($session->userlevel < 1 && !$is_author) {
             }
         }
 
-        // ── Tag System ───────────────────────────────────────────────────────
+        // ── Tag System (WordPress-Style Seamless Tagging) ────────────────────
         const tagContainer = document.getElementById('tagContainer');
         const tagInput     = document.getElementById('tagInput');
         const hiddenTags   = document.getElementById('hiddenTags');
         let tags = hiddenTags && hiddenTags.value ? hiddenTags.value.split(',').map(t => t.trim()).filter(t => t !== '') : [];
 
-        function updateTags() {
+        function updateTags(keepFocus = false) {
             if (!tagContainer || !tagInput) return;
-            const tagElements = tags.map((tag, index) => `
-                <span class="bg-brand-blue/10 text-brand-blue text-[11px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                    ${escapeHtml(tag)}
-                    <button type="button" onclick="removeTag(${index})" class="hover:text-brand-hover" title="Remove tag"><i class="fa-solid fa-xmark"></i></button>
-                </span>
-            `).join('');
-            tagContainer.innerHTML = tagElements;
-            // Always re-append the input (innerHTML wipe detaches it)
-            tagContainer.appendChild(tagInput);
-            if (hiddenTags) hiddenTags.value = tags.join(',');
-        }
 
-        function escapeHtml(str) {
-            const d = document.createElement('div');
-            d.appendChild(document.createTextNode(str));
-            return d.innerHTML;
+            // Remove existing pills without detaching tagInput from DOM
+            const existingPills = tagContainer.querySelectorAll('.tag-pill');
+            existingPills.forEach(p => p.remove());
+
+            // Insert pills right before tagInput
+            tags.forEach((tag, index) => {
+                const span = document.createElement('span');
+                span.className = 'tag-pill bg-brand-blue/10 text-brand-blue text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1.5 select-none transition-colors hover:bg-brand-blue/15';
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = tag;
+                span.appendChild(textSpan);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'text-brand-blue/60 hover:text-red-600 transition-colors cursor-pointer p-0.5';
+                removeBtn.title = 'Remove tag';
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark text-[10px]"></i>';
+                removeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeTag(index);
+                });
+                span.appendChild(removeBtn);
+
+                tagContainer.insertBefore(span, tagInput);
+            });
+
+            if (hiddenTags) hiddenTags.value = tags.join(',');
+
+            // Retain active cursor in tagInput like WordPress so user can continuously type tags
+            if (keepFocus) {
+                tagInput.focus();
+            }
         }
 
         function removeTag(index) {
             tags.splice(index, 1);
-            updateTags();
+            updateTags(true);
         }
 
         function addTagFromInput() {
             if (!tagInput) return false;
-            const raw = tagInput.value.trim();
-            if (!raw) return false;
-            // Support comma-separated tags (typed or pasted)
+            const raw = tagInput.value;
+            if (!raw || !raw.trim()) {
+                tagInput.value = '';
+                return false;
+            }
+            // Support comma or enter separated tags
             const parts = raw.split(',').map(t => t.trim().replace(/[,\s]+$/, '')).filter(t => t.length > 0);
             let added = false;
             parts.forEach(tag => {
@@ -761,7 +783,7 @@ if ($session->userlevel < 1 && !$is_author) {
             });
             tagInput.value = '';
             if (added) {
-                updateTags();
+                updateTags(true);
             }
             return added;
         }
@@ -772,35 +794,50 @@ if ($session->userlevel < 1 && !$is_author) {
                     if (this.value.trim().length > 0) {
                         e.preventDefault();
                         addTagFromInput();
+                        tagInput.focus();
+                    } else if (e.key === ',') {
+                        e.preventDefault();
                     }
                 } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
                     tags.pop();
-                    updateTags();
+                    updateTags(true);
                 }
             });
+
+            // Automatically turn comma into tag while typing (WordPress behavior)
+            tagInput.addEventListener('input', function() {
+                if (this.value.includes(',')) {
+                    addTagFromInput();
+                    tagInput.focus();
+                }
+            });
+
             // Also add tag when user blurs the input (clicks away after typing)
             tagInput.addEventListener('blur', function() {
                 if (this.value.trim()) addTagFromInput();
             });
+
             // Auto-split on paste if comma present
             tagInput.addEventListener('paste', function() {
                 setTimeout(function() {
                     if (tagInput.value.includes(',')) {
                         addTagFromInput();
+                        tagInput.focus();
                     }
                 }, 20);
             });
         }
 
         if (tagContainer && tagInput) {
+            // Clicking ANYWHERE inside the tagContainer immediately focuses the tag input
             tagContainer.addEventListener('click', function(e) {
-                if (e.target === tagContainer) {
+                if (!e.target.closest('button')) {
                     tagInput.focus();
                 }
             });
         }
 
-        updateTags();
+        updateTags(false);
 
         // ── Editor Formatting Helpers ─────────────────────────────────────────
         const editor = document.getElementById('editor');

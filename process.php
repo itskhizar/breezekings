@@ -42,7 +42,9 @@ class Process
       } else if ($session->logged_in) {
          // Default logged in behavior if needed
       } else {
+         session_write_close();
          header("Location: login.php");
+         exit();
       }
    }
 
@@ -52,24 +54,26 @@ class Process
       $retval = $session->login($_POST['user'], $_POST['pass']);
 
       if ($retval) {
+         session_write_close();
          header("Location: dashboard.php");
+         exit();
       } else {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
+         session_write_close();
          header("Location: login.php");
+         exit();
       }
    }
-
 
    function procLogout()
    {
       global $session;
       $session->logout();
+      session_write_close();
       header("Location: index.php");
+      exit();
    }
-
-
-
 
    function proadd_category()
    {
@@ -78,25 +82,40 @@ class Process
       $retval = $session->addcategory($_POST['category']);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: admin-categories.php?msg=success");
+         exit();
       } else if ($retval == 1) {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
+         session_write_close();
          header("Location: admin-categories.php?msg=error");
+         exit();
       } else if ($retval == 3) {
+         session_write_close();
          header("Location: admin-categories.php?msg=duplicate");
+         exit();
       } else if ($retval == 2) {
+         session_write_close();
          header("Location: admin-categories.php?msg=db_error");
+         exit();
       }
+      session_write_close();
+      header("Location: admin-categories.php");
+      exit();
    }
 
    function proedit_category()
    {
       global $session;
       if ($session->edit_category($_POST['id'], $_POST['category'])) {
+         session_write_close();
          header("Location: admin-categories.php?msg=success");
+         exit();
       } else {
+         session_write_close();
          header("Location: admin-categories.php?msg=error");
+         exit();
       }
    }
 
@@ -108,14 +127,23 @@ class Process
       $retval = $session->addadmin($name, $_POST['mobile_no'] ?? '', $_POST['email'] ?? '', $_POST['userlevel'] ?? 1);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: admin-users.php?msg=success");
+         exit();
       } else if ($retval == 1) {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
+         session_write_close();
          header("Location: admin-users.php?msg=error");
+         exit();
       } else if ($retval == 2) {
+         session_write_close();
          header("Location: admin-users.php?msg=db_error");
+         exit();
       }
+      session_write_close();
+      header("Location: admin-users.php");
+      exit();
    }
 
    function proedit_admin()
@@ -125,9 +153,13 @@ class Process
       $retval = $session->edit_admin($_POST['username'] ?? '', $name, $_POST['mobile_no'] ?? '', $_POST['email'] ?? '', $_POST['userlevel'] ?? 1);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: admin-users.php?msg=success");
+         exit();
       } else {
+         session_write_close();
          header("Location: admin-users.php?msg=error");
+         exit();
       }
    }
 
@@ -138,14 +170,23 @@ class Process
       $retval = $session->addpost($_POST, $_FILES['thumbnail'] ?? null);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: posts.php?msg=success");
+         exit();
       } else if ($retval == 1) {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
+         session_write_close();
          header("Location: create-post.php?msg=error");
+         exit();
       } else if ($retval == 2) {
+         session_write_close();
          header("Location: create-post.php?msg=db_error");
+         exit();
       }
+      session_write_close();
+      header("Location: posts.php");
+      exit();
    }
 
    function proedit_post()
@@ -154,51 +195,59 @@ class Process
       $retval = $session->edit_post($_POST['id'], $_POST, $_FILES['thumbnail'] ?? null);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: posts.php?msg=success");
+         exit();
       } else {
+         session_write_close();
          header("Location: edit-post.php?id=" . $_POST['id'] . "&msg=error");
+         exit();
       }
    }
 
-    function proadd_comment()
-    {
-       global $database;
-              // Bot Protection Check
-        if (!empty($_POST['hp_field'])) {
-           header("Location: /");
-           exit;
-        }
+   function proadd_comment()
+   {
+      global $database;
+      // Bot Protection Check
+      if (!empty($_POST['hp_field'])) {
+         session_write_close();
+         header("Location: /");
+         exit();
+      }
 
-        $post_id = isset($_POST['post_id']) ? (int)$_POST['post_id'] : 0;
-        $post = $database->get_post($post_id);
-        $redirect_base = $post ? bk_post_url($post) : '/';
+      $post_id = isset($_POST['post_id']) ? (int)$_POST['post_id'] : 0;
+      $post = $database->get_post($post_id);
+      $redirect_base = $post ? bk_post_url($post) : '/';
 
-        $submit_time = time();
-        $form_time = isset($_POST['form_time']) ? (int)$_POST['form_time'] : 0;
-        
-        if ($submit_time - $form_time < 3) {
-           // Too fast, likely a bot
-           header("Location: " . $redirect_base . "?msg=c_error#comments");
-           exit;
-        }
+      $submit_time = time();
+      $form_time = isset($_POST['form_time']) ? (int)$_POST['form_time'] : 0;
+      
+      if ($submit_time - $form_time < 3) {
+         // Too fast, likely a bot
+         session_write_close();
+         header("Location: " . $redirect_base . "?msg=c_error#comments");
+         exit();
+      }
 
-        $retval = $database->add_comment($post_id, $_POST['name'], $_POST['email'], $_POST['comment']);
+      $retval = $database->add_comment($post_id, $_POST['name'], $_POST['email'], $_POST['comment']);
 
-        if ($retval) {
-           header("Location: " . $redirect_base . "?msg=c_success#comments");
-        } else {
-           header("Location: " . $redirect_base . "?msg=c_error#comments");
-        }
-        exit;
-     }
+      session_write_close();
+      if ($retval) {
+         header("Location: " . $redirect_base . "?msg=c_success#comments");
+      } else {
+         header("Location: " . $redirect_base . "?msg=c_error#comments");
+      }
+      exit();
+   }
 
    function uploadimage()
    {
       global $session, $form;
 
       if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+         session_write_close();
          header("Location: settings.php?msg=upload_error");
-         exit;
+         exit();
       }
 
       $image = $_FILES['image']['name'];
@@ -210,30 +259,37 @@ class Process
       $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
       if (!in_array($fileType, $allowedMimeTypes) || !in_array(strtolower($fileExt), $allowedExtensions)) {
+         session_write_close();
          header("Location: settings.php?msg=invalid_image_type");
-         exit;
+         exit();
       }
 
       $path = "images/" . $image;
 
       if (!move_uploaded_file($fileTmpPath, $path)) {
+         session_write_close();
          header("Location: settings.php?msg=upload_error");
-         exit;
+         exit();
       }
 
       $retval = $session->uploadimage($_POST['username'], $image);
 
+      session_write_close();
       if ($retval == 0) {
          header("Location: settings.php?msg=success");
+         exit();
       } elseif ($retval == 1) {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
          header("Location: settings.php?msg=error");
+         exit();
       } elseif ($retval == 2) {
          header("Location: settings.php?msg=db_error");
+         exit();
       }
+      header("Location: settings.php");
+      exit();
    }
-
 
    function prochange_accountdetails()
    {
@@ -246,14 +302,23 @@ class Process
       $retval = $session->change_accountdetails($_POST['username'] ?? '', $displayname, $email, $phone, $_FILES['profile_image'] ?? null);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: settings.php?msg=success");
+         exit();
       } else if ($retval == 1) {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
+         session_write_close();
          header("Location: settings.php?msg=error");
+         exit();
       } else if ($retval == 2) {
+         session_write_close();
          header("Location: settings.php?msg=db_error");
+         exit();
       }
+      session_write_close();
+      header("Location: settings.php");
+      exit();
    }
 
    function changepassword()
@@ -263,34 +328,49 @@ class Process
       $retval = $session->changepassword($_POST['username'], $_POST['curpass'], $_POST['newpass']);
 
       if ($retval == 0) {
+         session_write_close();
          header("Location: settings.php?msg=success");
+         exit();
       } else if ($retval == 1) {
          $_SESSION['value_array'] = $_POST;
          $_SESSION['error_array'] = $form->getErrorArray();
+         session_write_close();
          header("Location: settings.php?msg=error");
+         exit();
       } else if ($retval == 2) {
+         session_write_close();
          header("Location: settings.php?msg=db_error");
+         exit();
       }
+      session_write_close();
+      header("Location: settings.php");
+      exit();
    }
 
    function prodelete_post()
    {
       global $session;
-      if ($session->delete_post($_GET['del_post'])) {
+      $success = $session->delete_post($_GET['del_post']);
+      session_write_close();
+      if ($success) {
          header("Location: posts.php?msg=deleted");
       } else {
          header("Location: posts.php?msg=error");
       }
+      exit();
    }
 
    function prodelete_category()
    {
       global $session;
-      if ($session->delete_category($_GET['del_cat'])) {
+      $success = $session->delete_category($_GET['del_cat']);
+      session_write_close();
+      if ($success) {
          header("Location: admin-categories.php?msg=deleted");
       } else {
          header("Location: admin-categories.php?msg=error");
       }
+      exit();
    }
 
    function prodelete_user()
@@ -298,19 +378,20 @@ class Process
       global $session;
       // Prevent deleting self
       if ($_GET['del_user'] == $session->username) {
+         session_write_close();
          header("Location: admin-users.php?msg=self_delete");
-         exit;
+         exit();
       }
-      if ($session->delete_user($_GET['del_user'])) {
+      $success = $session->delete_user($_GET['del_user']);
+      session_write_close();
+      if ($success) {
          header("Location: admin-users.php?msg=deleted");
       } else {
          header("Location: admin-users.php?msg=error");
       }
+      exit();
    }
-
 
 }
 
 $process = new Process;
-
-?>
